@@ -1,1 +1,67 @@
 <?php
+/**
+ * @file
+ * A module for working with diva.js
+ */
+
+
+/**
+ * Implements hook_help.
+ *
+ * Displays help and module information
+ *
+ * @param path
+ *  Which path of the site we're using to display help
+ * @param arg
+ *  Array that holds the current path as returned from arg() function.
+ */
+function diva_help($path, $arg) {
+    switch ($path) {
+        case 'admin/help#diva':
+            return '<p>'. t("Working with diva.js") . "</p>";
+            break;
+        default:
+            # code...
+            break;
+    }
+}
+
+/**
+ * Implements hook_perm
+ */
+
+function diva_perm() {
+    return array("administer diva module");
+}
+
+/**
+ * Implements hook_menu.
+ */
+function diva_menu() {
+    $items = array();
+
+    $items['admin/config/diva'] = array(
+        'title' => "Diva Config",
+        'description' => 'Configuration for the Diva module',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('diva_admin_form'),
+        'access arguments' => array('administer diva.js'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+
+function diva_admin_form($form, &$form_state) {
+    $form['path_to_vips'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Path to the VIPS executable'),
+        '#default_value' => variable_get('path_to_vips', '/usr/local/bin'),
+        '#size' => 12,
+        '#maxlength' => 64,
+        '#description' => t("The path where the vips software is installed."),
+    );
+
+    return system_settings_form($form);
+}
+
