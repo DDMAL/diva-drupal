@@ -1,0 +1,21 @@
+<?php
+
+function diva_install() {
+    $t = get_t();
+
+    $diva = array(
+        'type' => 'diva',
+        'name' => $t("Diva Node"),
+        'base' => 'node_content',
+        'description' => $t("A Diva.js node"),
+        'title_label' => $t("Title"),
+        'custom' => TRUE
+    );
+
+    $content_type = node_type_set_defaults($diva);
+    node_type_save($content_type);
+}
+
+function diva_uninstall() {
+    node_type_delete('diva');
+}
