@@ -1,7 +1,136 @@
 <?php
 
+function diva_schema() {
+    $schema = array();
+    $schema['diva_data'] = array(
+        'description' => t("Data storage for each diva node"),
+        'fields' => array(
+            'divaid' => array(
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'nid' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => 'The Node ID'
+            ),
+            'adaptive_padding' => array(
+                'type' => 'float',
+                'default' => 0.05,
+            ),
+            'auto_title' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny',
+            ),
+            'fullscreen' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'gotopage' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'grid' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'gridslider' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'keyscroll' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'spacescroll' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'zoomslider' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'fixed_padding' => array(
+                'type' => 'int',
+                'default' => 10,
+                'size' => 'medium'
+            ),
+            'fixed_height_grid' => array(
+                'type' => 'int',
+                'default' => 1,
+                'size' => 'tiny'
+            ),
+            'max_pages_per_row' => array(
+                'type' => 'int',
+                'default' => 8,
+                'size' => 'small'
+            ),
+            'min_pages_per_row' => array(
+                'type' => 'int',
+                'default' => 2,
+                'size' => 'small'
+            ),
+            'def_pages_per_row' => array(
+                'type' => 'int',
+                'default' => 5,
+                'size' => 'small'
+            ),
+            'max_zoomlevel' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'min_zoomlevel' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'def_zoomlevel' => array(
+                'type' => 'int',
+                'default' => 2,
+                'size' => 'small'
+            ),
+            'tile_width' => array(
+                'type' => 'int',
+                'default' => 256,
+                'size' => 'small'
+            ),
+            'tile_height' => array(
+                'type' => 'int',
+                'default' => 256,
+                'size' => 'small'
+            ),
+            'viewport' => array(
+                'type' => 'int',
+                'default' => 200,
+                'size' => 'small'
+            ),
+        ),
+        'primary key' => array('divaid'),
+        'indexes' => array(
+            'nid' => array('nid')
+        ),
+        'unique keys' => array(
+            'id' => array('divaid'),
+        ),
+    );
+    return $schema;
+}
+
 function diva_install() {
     $t = get_t();
+    // drupal_install_schema('diva');
 
     $diva = array(
         'type' => 'diva',
@@ -17,5 +146,15 @@ function diva_install() {
 }
 
 function diva_uninstall() {
+    drupal_uninstall_schema('diva');
     node_type_delete('diva');
+}
+
+function _diva_installed_fields() {
+    $t = get_t();
+
+}
+
+function _diva_installed_instances() {
+    $t = get_t();
 }

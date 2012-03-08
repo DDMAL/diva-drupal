@@ -41,6 +41,17 @@ function diva_menu() {
     $items = array();
 
     $items['admin/config/diva'] = array(
+        'title' => "Diva",
+        'description' => "Configuration for the Diva module",
+        'position' => "right",
+        'weight' => -100,
+        'page callback' => 'system_admin_menu_block_page',
+        'access arguments' => array("administer diva module"),
+        'file' => 'system.admin.inc',
+        'file path' => drupal_get_path('module', 'system'),
+    );
+
+    $items['admin/config/diva/config'] = array(
         'title' => "Diva Config",
         'description' => 'Configuration for the Diva module',
         'page callback' => 'drupal_get_form',
@@ -53,13 +64,31 @@ function diva_menu() {
 }
 
 function diva_admin_form($form, &$form_state) {
-    $form['path_to_vips'] = array(
+    $form['diva_path_to_vips'] = array(
         '#type' => 'textfield',
         '#title' => t('Path to the VIPS executable'),
-        '#default_value' => variable_get('path_to_vips', '/usr/local/bin'),
+        '#default_value' => variable_get('diva_path_to_vips', '/usr/local/bin'),
         '#size' => 12,
         '#maxlength' => 64,
         '#description' => t("The path where the vips software is installed."),
+    );
+
+    $form['diva_image_server'] = array(
+        '#type' => 'textfield',
+        '#title' => t("IIP Image Server"),
+        '#default_value' => variable_get('diva_image_server', 'http://example.com:9000/iipsrv.fcgi'),
+        '#size' => 64,
+        '#maxlength' => 128,
+        '#description' => t("Location of the IIP Image Server"),
+    );
+
+    $form['diva_default_tile_size'] = array(
+        '#type' => 'textfield',
+        '#title' => t("Default Tile Size"),
+        '#default_value' => variable_get("diva_default_tile_size", "256x256"),
+        '#size' => 12,
+        '#maxlength' => 12,
+        '#description' => t("Default Diva File Size (wxh)")
     );
 
     return system_settings_form($form);
