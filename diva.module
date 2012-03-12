@@ -94,3 +94,135 @@ function diva_admin_form($form, &$form_state) {
     return system_settings_form($form);
 }
 
+function diva_form_alter(&$form, $form_state, $form_id) {
+    if ($form_id == "diva_node_form") {
+        $form['diva_images'] = array(
+            '#type' => 'file',
+            '#title' => t("Image Upload")
+        );
+        $form['diva'] = array(
+            '#type' => 'fieldset',
+            '#title' => t("Diva Settings"),
+            '#collapsible' => TRUE,
+            '#collapsed' => FALSE,
+            '#group' => 'additional_settings'
+        );
+        $form['diva']['auto_title'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Auto title"),
+            '#description' => t("Set the auto-title parameter")
+        );
+        $form['diva']['fullscreen'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Full-Screen"),
+            '#description' => t("Enable Full-screen mode")
+        );
+        $form['diva']['goto_page'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Go To Page"),
+            '#description' => t("Enable Go To Page block")
+        );
+        $form['diva']['grid'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Grid View"),
+            '#description' => t("Enable Grid View Mode")
+        );
+        $form['diva']['grid_slider'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Grid Slider"),
+            '#description' => t("Enable the Grid Slider")
+        );
+        $form['diva']['keyscroll'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Key Scroll"),
+            '#description' => t("Enable Scroll using Arrow Keys")
+        );
+        $form['diva']['spacescroll'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Space Scroll"),
+            '#description' => t("Enable Scroll Using Spacebar")
+        );
+        $form['diva']['zoomslider'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Zoom Slider"),
+            '#description' => t("Enable the Zoom Slider")
+        );
+        $form['diva']['fixed_height_grid'] = array(
+            '#type' => 'checkbox',
+            '#title' => t("Fixed Height Grid"),
+            '#description' => t("Enable Fixed Height Grid")
+        );
+        $form['diva']['max_pages_per_row'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Max Pages Per Row"),
+            '#description' => t("Maximum Pages Per Row")
+        );
+        $form['diva']['min_pages_per_row'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Min Pages Per Row"),
+            '#description' => t("Minimum Pages Per Row")
+        );
+        $form['diva']['def_pages_per_row'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Default Pages Per Row"),
+        );
+        $form['diva']['max_zoomlevel'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Max Zoom"),
+            '#description' => t("Maximum Pages Per Row")
+        );
+        $form['diva']['min_zoomlevel'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Min Zoom"),
+            '#description' => t("Minimum Pages Per Row")
+        );
+        $form['diva']['def_zoomlevel'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Default Zoom Level"),
+        );
+        $form['diva']['tile_width'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Tile Width"),
+        );
+        $form['diva']['tile_height'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Tile Height"),
+        );
+        $form['diva']['viewport'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Viewport Size"),
+        );
+        $form['diva']['adaptive_padding'] = array(
+            '#type' => 'textfield',
+            '#title' => t("Adaptive Padding"),
+            '#description' => t("The value of the adaptive padding setting")
+        );
+    } elseif (isset($form['type']) && isset($form["#node"]) && $form['type']['value'] . '_node_form' == $form_id) {
+        dpm("hi there");
+    }
+}
+
+function diva_node_validate($node, $form) {
+    dpm("Node Validate Called");
+}
+
+function diva_node_load($nodes, $types) {
+    dpm("Node Load Called");
+}
+
+function diva_node_insert($node) {
+    dpm("Node Insert Called");
+}
+
+function diva_node_delete($node) {
+    dpm("Node Delete Called");
+}
+
+function diva_node_update($node) {
+    dpm("Node Update Called");
+}
+
+function diva_node_view($node, $build_mode = "full") {
+    dpm("Node View Called");
+}
+
