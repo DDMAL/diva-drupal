@@ -107,93 +107,111 @@ function diva_form_alter(&$form, $form_state, $form_id) {
             '#collapsed' => FALSE,
             '#group' => 'additional_settings'
         );
-        $form['diva']['auto_title'] = array(
-            '#type' => 'checkbox',
-            '#title' => t("Auto title"),
-            '#description' => t("Set the auto-title parameter")
-        );
+        // $form['diva']['auto_title'] = array(
+        //     '#type' => 'checkbox',
+        //     '#title' => t("Auto title"),
+        //     '#description' => t("Set the auto-title parameter")
+        // );
         $form['diva']['fullscreen'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Full-Screen"),
             '#description' => t("Enable Full-screen mode")
         );
         $form['diva']['goto_page'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Go To Page"),
             '#description' => t("Enable Go To Page block")
         );
         $form['diva']['grid'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Grid View"),
             '#description' => t("Enable Grid View Mode")
         );
         $form['diva']['grid_slider'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Grid Slider"),
             '#description' => t("Enable the Grid Slider")
         );
         $form['diva']['keyscroll'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Key Scroll"),
             '#description' => t("Enable Scroll using Arrow Keys")
         );
         $form['diva']['spacescroll'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 0,
             '#title' => t("Space Scroll"),
             '#description' => t("Enable Scroll Using Spacebar")
         );
         $form['diva']['zoomslider'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Zoom Slider"),
             '#description' => t("Enable the Zoom Slider")
         );
         $form['diva']['fixed_height_grid'] = array(
             '#type' => 'checkbox',
+            '#default_value' => 1,
             '#title' => t("Fixed Height Grid"),
             '#description' => t("Enable Fixed Height Grid")
         );
         $form['diva']['max_pages_per_row'] = array(
             '#type' => 'textfield',
+            '#default_value' => 8,
             '#title' => t("Max Pages Per Row"),
             '#description' => t("Maximum Pages Per Row")
         );
         $form['diva']['min_pages_per_row'] = array(
             '#type' => 'textfield',
+            '#default_value' => 2,
             '#title' => t("Min Pages Per Row"),
             '#description' => t("Minimum Pages Per Row")
         );
         $form['diva']['def_pages_per_row'] = array(
             '#type' => 'textfield',
+            '#default_value' => 5,
             '#title' => t("Default Pages Per Row"),
         );
         $form['diva']['max_zoomlevel'] = array(
             '#type' => 'textfield',
+            '#default_value' => 0,
             '#title' => t("Max Zoom"),
-            '#description' => t("Maximum Pages Per Row")
+            '#description' => t("Restrict max zoom level. 0 sets the maximum zoom to the value returned by the image server.")
         );
         $form['diva']['min_zoomlevel'] = array(
             '#type' => 'textfield',
+            '#default_value' => 0,
             '#title' => t("Min Zoom"),
-            '#description' => t("Minimum Pages Per Row")
+            '#description' => t("Minimum Zoom Level")
         );
         $form['diva']['def_zoomlevel'] = array(
             '#type' => 'textfield',
-            '#title' => t("Default Zoom Level"),
+            '#default_value' => 2,
+            '#title' => t("Initial Zoom Level"),
         );
         $form['diva']['tile_width'] = array(
             '#type' => 'textfield',
+            '#default_value' => 256,
             '#title' => t("Tile Width"),
         );
         $form['diva']['tile_height'] = array(
             '#type' => 'textfield',
+            '#default_value' => 256,
             '#title' => t("Tile Height"),
         );
         $form['diva']['viewport'] = array(
             '#type' => 'textfield',
-            '#title' => t("Viewport Size"),
+            '#default_value' => 200,
+            '#title' => t("Pretend tiles +/- this value from viewport are in"),
         );
         $form['diva']['adaptive_padding'] = array(
             '#type' => 'textfield',
+            '#default_value' => 0.05,
             '#title' => t("Adaptive Padding"),
             '#description' => t("The value of the adaptive padding setting")
         );
@@ -212,6 +230,7 @@ function diva_node_load($nodes, $types) {
 
 function diva_node_insert($node) {
     dpm("Node Insert Called");
+    dpm($node);
 }
 
 function diva_node_delete($node) {
