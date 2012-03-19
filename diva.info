@@ -2,7 +2,3 @@ name = Diva Module
 description = "A Drupal Module to manage Diva.js images"
 core = 7.x
 package = Diva
-stylesheets[diva][] = diva.js/css/diva.css
-stylesheets[diva][] = diva.js/css/single.css
-scripts[] = diva.js/js/diva.js
-scripts[] = diva.js/js/diva-utils.js

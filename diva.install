@@ -21,11 +21,6 @@ function diva_schema() {
                 'type' => 'float',
                 'default' => 0.05,
             ),
-            'auto_title' => array(
-                'type' => 'int',
-                'default' => 1,
-                'size' => 'tiny',
-            ),
             'fullscreen' => array(
                 'type' => 'int',
                 'default' => 1,
@@ -143,11 +138,24 @@ function diva_install() {
 
     $content_type = node_type_set_defaults($diva);
     node_type_save($content_type);
+
+    // disable comments by default
+    variable_set('comment_diva', '1');
+
+    variable_set('diva_image_server', 'http://example.com:9000/iipsrv.fcgi');
+    variable_set('diva_path_to_vips', '/usr/local/bin');
+    variable_set("diva_default_tile_size", "256x256");
+
 }
 
 function diva_uninstall() {
     drupal_uninstall_schema('diva');
     node_type_delete('diva');
+
+    variable_del('comment_diva');
+    variable_del('diva_path_to_vips');
+    variable_del('diva_image_server');
+    variable_del('diva_default_tile_size');
 }
 
 function _diva_installed_fields() {

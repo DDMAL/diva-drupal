@@ -4,7 +4,6 @@
  * A module for working with diva.js
  */
 
-
 /**
  * Implements hook_help.
  *
@@ -63,6 +62,18 @@ function diva_menu() {
     return $items;
 }
 
+// function diva_node_info() {
+//     $items = array();
+    
+//     $items['diva'] = array(
+//         'name' => t("Diva Content"),
+//         'module' => 'diva',
+//         'description' => t("Diva content description")
+//     );
+
+//     return $items;
+// }
+
 function diva_admin_form($form, &$form_state) {
     $form['diva_path_to_vips'] = array(
         '#type' => 'textfield',
@@ -95,7 +106,9 @@ function diva_admin_form($form, &$form_state) {
 }
 
 function diva_form_alter(&$form, $form_state, $form_id) {
+    dpm($form_id);
     if ($form_id == "diva_node_form") {
+        $n = $form['#node'];
         $form['diva_images'] = array(
             '#type' => 'file',
             '#title' => t("Image Upload")
@@ -107,98 +120,109 @@ function diva_form_alter(&$form, $form_state, $form_id) {
             '#collapsed' => FALSE,
             '#group' => 'additional_settings'
         );
-        $form['diva']['auto_title'] = array(
-            '#type' => 'checkbox',
-            '#title' => t("Auto title"),
-            '#description' => t("Set the auto-title parameter")
-        );
         $form['diva']['fullscreen'] = array(
             '#type' => 'checkbox',
             '#title' => t("Full-Screen"),
-            '#description' => t("Enable Full-screen mode")
+            '#description' => t("Enable Full-screen mode"),
+            '#default_value' => isset($n->nid) ? $n->fullscreen : 1
         );
         $form['diva']['goto_page'] = array(
             '#type' => 'checkbox',
             '#title' => t("Go To Page"),
-            '#description' => t("Enable Go To Page block")
+            '#description' => t("Enable Go To Page block"),
+            '#default_value' => isset($n->nid) ? $n->gotopage : 0
         );
         $form['diva']['grid'] = array(
             '#type' => 'checkbox',
             '#title' => t("Grid View"),
-            '#description' => t("Enable Grid View Mode")
+            '#description' => t("Enable Grid View Mode"),
+            '#default_value' => isset($n->nid) ? $n->grid : 1
         );
         $form['diva']['grid_slider'] = array(
             '#type' => 'checkbox',
             '#title' => t("Grid Slider"),
-            '#description' => t("Enable the Grid Slider")
+            '#description' => t("Enable the Grid Slider"),
+            '#default_value' => isset($n->nid) ? $n->gridslider : 1
         );
         $form['diva']['keyscroll'] = array(
             '#type' => 'checkbox',
             '#title' => t("Key Scroll"),
-            '#description' => t("Enable Scroll using Arrow Keys")
+            '#description' => t("Enable Scroll using Arrow Keys"),
+            '#default_value' => isset($n->nid) ? $n->keyscroll : 1
         );
         $form['diva']['spacescroll'] = array(
             '#type' => 'checkbox',
             '#title' => t("Space Scroll"),
-            '#description' => t("Enable Scroll Using Spacebar")
+            '#description' => t("Enable Scroll Using Spacebar"),
+            '#default_value' => isset($n->nid) ? $n->spacescroll : 0
         );
         $form['diva']['zoomslider'] = array(
             '#type' => 'checkbox',
             '#title' => t("Zoom Slider"),
-            '#description' => t("Enable the Zoom Slider")
+            '#description' => t("Enable the Zoom Slider"),
+            '#default_value' => isset($n->nid) ? $n->zoomslider : 1
         );
         $form['diva']['fixed_height_grid'] = array(
             '#type' => 'checkbox',
             '#title' => t("Fixed Height Grid"),
-            '#description' => t("Enable Fixed Height Grid")
+            '#description' => t("Enable Fixed Height Grid"),
+            '#default_value' => isset($n->nid) ? $n->fixed_height_grid : 1
         );
         $form['diva']['max_pages_per_row'] = array(
             '#type' => 'textfield',
             '#title' => t("Max Pages Per Row"),
-            '#description' => t("Maximum Pages Per Row")
+            '#description' => t("Maximum Pages Per Row"),
+            '#default_value' => isset($n->nid) ? $n->max_pages_per_row : 8
         );
         $form['diva']['min_pages_per_row'] = array(
             '#type' => 'textfield',
             '#title' => t("Min Pages Per Row"),
-            '#description' => t("Minimum Pages Per Row")
+            '#description' => t("Minimum Pages Per Row"),
+            '#default_value' => isset($n->nid) ? $n->min_pages_per_row : 2
         );
         $form['diva']['def_pages_per_row'] = array(
             '#type' => 'textfield',
             '#title' => t("Default Pages Per Row"),
+            '#default_value' => isset($n->nid) ? $n->def_pages_per_row : 5
         );
         $form['diva']['max_zoomlevel'] = array(
             '#type' => 'textfield',
             '#title' => t("Max Zoom"),
-            '#description' => t("Maximum Pages Per Row")
+            '#description' => t("Maximum Zoom level"),
+            '#default_value' => isset($n->nid) ? $n->max_zoomlevel : 0,
         );
         $form['diva']['min_zoomlevel'] = array(
             '#type' => 'textfield',
             '#title' => t("Min Zoom"),
-            '#description' => t("Minimum Pages Per Row")
+            '#description' => t("Minimum Zoom level"),
+            '#default_value' => isset($n->nid) ? $n->min_zoomlevel : 0,
         );
         $form['diva']['def_zoomlevel'] = array(
             '#type' => 'textfield',
             '#title' => t("Default Zoom Level"),
+            '#default_value' => isset($n->nid) ? $n->def_zoomlevel : 2,
         );
         $form['diva']['tile_width'] = array(
             '#type' => 'textfield',
             '#title' => t("Tile Width"),
+            '#default_value' => isset($n->nid) ? $n->tile_width : _parse_tile(variable_get('diva_default_tile_size'), 'width')
         );
         $form['diva']['tile_height'] = array(
             '#type' => 'textfield',
             '#title' => t("Tile Height"),
+            '#default_value' => isset($n->nid) ? $n->tile_height : _parse_tile(variable_get('diva_default_tile_size'), 'height')
         );
         $form['diva']['viewport'] = array(
             '#type' => 'textfield',
             '#title' => t("Viewport Size"),
+            '#default_value' => isset($n->nid) ? $n->viewport : 200
         );
         $form['diva']['adaptive_padding'] = array(
             '#type' => 'textfield',
             '#title' => t("Adaptive Padding"),
-            '#description' => t("The value of the adaptive padding setting")
+            '#description' => t("The value of the adaptive padding setting"),
+            '#default_value' => isset($n->nid) ? $n->adaptive_padding : 0.05
         );
-    } elseif (isset($form['type']) && isset($form["#node"]) && $form['type']['value'] . '_node_form' == $form_id) {
-        dpm("hi there");
     }
 }
 
@@ -206,23 +230,204 @@ function diva_node_validate($node, $form) {
     dpm("Node Validate Called");
 }
 
-function diva_node_load($nodes, $types) {
+function diva_node_load($nodes) {
     dpm("Node Load Called");
+    // dpm($nodes);
+    $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
+    foreach($result as $record) {
+        $tn = $nodes[$record->nid];
+        $tn->adaptive_padding = $record->adaptive_padding;
+        $tn->fullscreen = $record->fullscreen;
+        $tn->gotopage = $record->gotopage;
+        $tn->grid = $record->grid;
+        $tn->gridslider = $record->gridslider;
+        $tn->keyscroll = $record->keyscroll;
+        $tn->spacescroll = $record->spacescroll;
+        $tn->zoomslider = $record->zoomslider;
+        $tn->fixed_height_grid = $record->fixed_height_grid;
+        $tn->max_pages_per_row = $record->max_pages_per_row;
+        $tn->min_pages_per_row = $record->min_pages_per_row;
+        $tn->def_pages_per_row = $record->def_pages_per_row;
+        $tn->max_zoomlevel = $record->max_zoomlevel;
+        $tn->min_zoomlevel = $record->min_zoomlevel;
+        $tn->def_zoomlevel = $record->def_zoomlevel;
+        $tn->tile_width = $record->tile_width;
+        $tn->tile_height = $record->tile_height;
+        $tn->viewport = $record->viewport;
+    }
 }
 
 function diva_node_insert($node) {
     dpm("Node Insert Called");
+    db_insert('diva_data')
+        ->fields(array(
+            'nid' => $node->nid,
+            'adaptive_padding' => $node->adaptive_padding,
+            'fullscreen' => $node->fullscreen,
+            'gotopage' => $node->goto_page,
+            'grid' => $node->grid,
+            'gridslider' => $node->grid_slider,
+            'keyscroll' => $node->keyscroll,
+            'spacescroll' => $node->spacescroll,
+            'zoomslider' => $node->zoomslider,
+            'fixed_height_grid' => $node->fixed_height_grid,
+            'max_pages_per_row' => $node->max_pages_per_row,
+            'min_pages_per_row' => $node->min_pages_per_row,
+            'def_pages_per_row' => $node->def_pages_per_row,
+            'max_zoomlevel' => $node->max_zoomlevel,
+            'min_zoomlevel' => $node->min_zoomlevel,
+            'def_zoomlevel' => $node->def_zoomlevel,
+            'tile_width' => $node->tile_width,
+            'tile_height' => $node->tile_height,
+            'viewport' => $node->viewport
+        ))
+        ->execute();
 }
 
 function diva_node_delete($node) {
     dpm("Node Delete Called");
+    db_delete('diva_data')
+        ->condition('nid', $node->nid)
+        ->execute();
+
 }
 
 function diva_node_update($node) {
     dpm("Node Update Called");
+    db_update('diva_data')
+        ->fields(array(
+            'adaptive_padding' => $node->adaptive_padding,
+            'fullscreen' => $node->fullscreen,
+            'gotopage' => $node->goto_page,
+            'grid' => $node->grid,
+            'gridslider' => $node->grid_slider,
+            'keyscroll' => $node->keyscroll,
+            'spacescroll' => $node->spacescroll,
+            'zoomslider' => $node->zoomslider,
+            'fixed_height_grid' => $node->fixed_height_grid,
+            'max_pages_per_row' => $node->max_pages_per_row,
+            'min_pages_per_row' => $node->min_pages_per_row,
+            'def_pages_per_row' => $node->def_pages_per_row,
+            'max_zoomlevel' => $node->max_zoomlevel,
+            'min_zoomlevel' => $node->min_zoomlevel,
+            'def_zoomlevel' => $node->def_zoomlevel,
+            'tile_width' => $node->tile_width,
+            'tile_height' => $node->tile_height,
+            'viewport' => $node->viewport
+        ))
+        ->condition('nid', $node->nid)
+        ->execute();
 }
 
 function diva_node_view($node, $build_mode = "full") {
     dpm("Node View Called");
+    // dpm($node);
 }
+
+function diva_theme() {
+    dpm("Diva theme called");
+    return array(
+        'node__diva' => array(
+            'variables' => array('content' => "Hello."),
+            'template' => 'node--diva',
+        )
+    );
+}
+
+function diva_page() {
+    $content = "Hello.";
+    return theme('diva', $content);
+}
+
+function diva_preprocess_node(&$vars, $hook) {
+    // dpm($vars);
+    // dpm($vars);
+    drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva.js');
+    drupal_add_js(drupal_get_path('module', 'diva') . 'diva.js/js/diva-utils.js');
+
+    drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/diva.css", array('weight' => 9000));
+    drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/pnotify.css");
+
+    drupal_add_library('system', 'ui.slider');
+
+    drupal_add_js(array('diva' => array(
+        'adaptivePadding' => floatval($vars['adaptive_padding']),
+        
+        'fixedHeightGrid' => (boolean)$vars['fixed_height_grid'],
+        'fullScreen' => (boolean)$vars['fullscreen'],
+        'goToPage' => (boolean)$vars['gotopage'],
+        'grid' => (boolean)$vars['grid'],
+        'gridSlider' => (boolean)$vars['gridslider'],
+        'keyScroll' => (boolean)$vars['keyscroll'],
+        'spaceScroll' => (boolean)$vars['spacescroll'],
+        'zoomSlider' => (boolean)$vars['zoomslider'],
+        
+        'maxPagesPerRow' => intval($vars['max_pages_per_row']),
+        'minPagesPerRow' => intval($vars['min_pages_per_row']),
+        'defPagesPerRow' => intval($vars['def_pages_per_row']),
+        'maxZoomLevel' => intval($vars['max_zoomlevel']),
+        'minZoomLevel' => intval($vars['min_zoomlevel']),
+        'defZoomLevel' => intval($vars['def_zoomlevel']),
+        'tileWidth' => intval($vars['tile_width']),
+        'tileHeight' => intval($vars['tile_height']),
+        'viewport' => intval($vars['viewport']),
+    )), 'setting');
+
+    $init_diva = '(function($) {
+                        Drupal.behaviors.diva = {
+                            attach: function(context, settings) {
+                                console.log(Drupal.settings.diva);
+                                $("#diva-wrapper", context).diva({
+                                    enableAutoTitle: false,
+                                    fixedPadding: 20,
+                                    tileFadeSpeed: 0,
+                                    
+                                    adaptivePadding: Drupal.settings.diva.adaptivePadding,
+                                    fixedHeightGrid: Drupal.settings.diva.fixedHeightGrid,
+                                    pagesPerGridRow: Drupal.settings.diva.defPagesPerRow,
+                                    enableZoomSlider: Drupal.settings.diva.zoomSlider,
+                                    enableFullscreen: Drupal.settings.diva.fullScreen,
+                                    enableGrid: Drupal.settings.diva.grid,
+                                    enableGridSlider: Drupal.settings.diva.gridSlider,
+                                    enableKeyScroll: Drupal.settings.diva.keyScroll,
+                                    enableSpaceScroll: Drupal.settings.diva.spaceScroll,
+                                    enableGotoPage: Drupal.settings.diva.goToPage,
+                                    maxPagesPerRow: Drupal.settings.diva.maxPagesPerRow,
+                                    minPagesPerRow: Drupal.settings.diva.minPagesPerRow,
+                                    pagesPerRow: Drupal.settings.diva.defPagesPerRow,
+                                    maxZoomLevel: Drupal.settings.diva.maxZoomLevel,
+                                    minZoomLevel: Drupal.settings.diva.minZoomLevel,
+                                    zoomLevel: Drupal.settings.diva.defZoomLevel,
+                                    viewportMargin: Drupal.settings.diva.viewport,
+                                    tileHeight: Drupal.settings.diva.tileHeight,
+                                    tileWidth: Drupal.settings.diva.tileWidth,
+
+                                    iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/berojp2/", 
+                                    backendServer: "http://petrucci.musiclibs.net:9002/loldivaserve.php?d=berojp2"
+                                });
+                                var dv = $("#diva-wrapper", context).data("diva");
+                            }
+                        }
+                  })(jQuery);';
+    drupal_add_js($init_diva, array('type' => 'inline', 'preprocess' => TRUE));
+}
+
+
+function _parse_tile($dimensions, $return_dim) {
+    $d = explode("x", $dimensions);
+    if($return_dim == 'width') {
+        return $d[0];
+    } else {
+        return $d[1];
+    }
+}
+
+// function diva_theme_registry_alter(&$theme_registry) {
+//     dpm("Theme registry alter called");
+// }
+
+    // function theme_diva($variables) {
+    //     dpm("Theme template called");
+    //     return theme('diva', $variables);
+    // }
 
