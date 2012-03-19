@@ -59,6 +59,14 @@ function diva_menu() {
         'type' => MENU_NORMAL_ITEM,
     );
 
+    $items['diva/divaserve'] = array(
+        'page callback' => 'diva_ajax_callback',
+        'access arguments' => TRUE,
+        'page arguments' => array(1),
+        'type' => MENU_CALLBACK,
+        'file' => 'divaserve.inc'
+    );
+
     return $items;
 }
 
@@ -343,7 +351,7 @@ function diva_preprocess_node(&$vars, $hook) {
     // dpm($vars);
     // dpm($vars);
     drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva.js');
-    drupal_add_js(drupal_get_path('module', 'diva') . 'diva.js/js/diva-utils.js');
+    drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva-utils.js');
 
     drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/diva.css", array('weight' => 9000));
     drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/pnotify.css");
@@ -371,22 +379,26 @@ function diva_preprocess_node(&$vars, $hook) {
         'tileWidth' => intval($vars['tile_width']),
         'tileHeight' => intval($vars['tile_height']),
         'viewport' => intval($vars['viewport']),
+
+        'imageserver' => variable_get('diva_image_server', NULL)
+
     )), 'setting');
 
     $init_diva = '(function($) {
                         Drupal.behaviors.diva = {
                             attach: function(context, settings) {
                                 console.log(Drupal.settings.diva);
+                                d = Drupal.settings.diva;
                                 $("#diva-wrapper", context).diva({
                                     enableAutoTitle: false,
                                     fixedPadding: 20,
                                     tileFadeSpeed: 0,
                                     
-                                    adaptivePadding: Drupal.settings.diva.adaptivePadding,
-                                    fixedHeightGrid: Drupal.settings.diva.fixedHeightGrid,
-                                    pagesPerGridRow: Drupal.settings.diva.defPagesPerRow,
-                                    enableZoomSlider: Drupal.settings.diva.zoomSlider,
-                                    enableFullscreen: Drupal.settings.diva.fullScreen,
+                                    adaptivePadding: d.adaptivePadding,
+                                    fixedHeightGrid: d.fixedHeightGrid,
+                                    pagesPerGridRow: d.defPagesPerRow,
+                                    enableZoomSlider: d.zoomSlider,
+                                    enableFullscreen: d.fullScreen,
                                     enableGrid: Drupal.settings.diva.grid,
                                     enableGridSlider: Drupal.settings.diva.gridSlider,
                                     enableKeyScroll: Drupal.settings.diva.keyScroll,
@@ -402,7 +414,7 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileHeight: Drupal.settings.diva.tileHeight,
                                     tileWidth: Drupal.settings.diva.tileWidth,
 
-                                    iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/berojp2/", 
+                                    iipServerBaseUrl: Drupal.settings.diva.imageserver + "?FIF=/mnt/images/berojp2/", 
                                     backendServer: "http://petrucci.musiclibs.net:9002/loldivaserve.php?d=berojp2"
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
