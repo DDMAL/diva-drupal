@@ -59,10 +59,11 @@ function diva_menu() {
         'type' => MENU_NORMAL_ITEM,
     );
 
-    $items['diva/divaserve'] = array(
+    $items['diva/divaserve/%'] = array(
         'page callback' => 'diva_ajax_callback',
         'access arguments' => TRUE,
-        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'page arguments' => array(2, 3),
         'type' => MENU_CALLBACK,
         'file' => 'divaserve.inc'
     );
@@ -213,12 +214,12 @@ function diva_form_alter(&$form, $form_state, $form_id) {
         $form['diva']['tile_width'] = array(
             '#type' => 'textfield',
             '#title' => t("Tile Width"),
-            '#default_value' => isset($n->nid) ? $n->tile_width : _parse_tile(variable_get('diva_default_tile_size'), 'width')
+            '#default_value' => isset($n->nid) ? $n->tile_width : _parse_tile(variable_get('diva_default_tile_size', "256x256"), 'width')
         );
         $form['diva']['tile_height'] = array(
             '#type' => 'textfield',
             '#title' => t("Tile Height"),
-            '#default_value' => isset($n->nid) ? $n->tile_height : _parse_tile(variable_get('diva_default_tile_size'), 'height')
+            '#default_value' => isset($n->nid) ? $n->tile_height : _parse_tile(variable_get('diva_default_tile_size', "256x256"), 'height')
         );
         $form['diva']['viewport'] = array(
             '#type' => 'textfield',
@@ -415,7 +416,7 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileWidth: Drupal.settings.diva.tileWidth,
 
                                     iipServerBaseUrl: Drupal.settings.diva.imageserver + "?FIF=/mnt/images/berojp2/", 
-                                    backendServer: "http://petrucci.musiclibs.net:9002/loldivaserve.php?d=berojp2"
+                                    backendServer: "/diva/divaserve/berojp2"
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
                             }
