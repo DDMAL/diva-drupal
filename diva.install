@@ -17,6 +17,11 @@ function diva_schema() {
                 'default' => 0,
                 'description' => 'The Node ID'
             ),
+            'folder_name' => array(
+                'type' => 'varchar',
+                'length' => 128,
+                'not null' => TRUE,
+            ),
             'adaptive_padding' => array(
                 'type' => 'float',
                 'default' => 0.05,
@@ -149,9 +154,9 @@ function diva_install() {
 }
 
 function diva_uninstall() {
-    drupal_uninstall_schema('diva');
     node_type_delete('diva');
-
+    drupal_uninstall_schema('diva');
+    
     variable_del('comment_diva');
     variable_del('diva_path_to_vips');
     variable_del('diva_image_server');

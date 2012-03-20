@@ -33,6 +33,21 @@ function diva_perm() {
     return array("administer diva module");
 }
 
+function diva_init() {
+}
+
+function diva_file_mimetype_mapping_alter(&$mapping) {
+    $mext = 'gz';
+    $mtype = 'application/x-gzip';
+
+    if(!in_array($mtype, $mapping['mimetypes'])) {
+        $mapping['mimetypes'][] = $mtype;
+    }
+
+    $idx = array_search($mtype, $mapping['mimetypes']);
+    $mapping['extensions'][$mext] = $idx;
+}
+
 /**
  * Implements hook_menu.
  */
@@ -59,7 +74,7 @@ function diva_menu() {
         'type' => MENU_NORMAL_ITEM,
     );
 
-    $items['diva/divaserve/%'] = array(
+    $items['diva/divaserve'] = array(
         'page callback' => 'diva_ajax_callback',
         'access arguments' => TRUE,
         'access callback' => TRUE,
@@ -70,18 +85,6 @@ function diva_menu() {
 
     return $items;
 }
-
-// function diva_node_info() {
-//     $items = array();
-    
-//     $items['diva'] = array(
-//         'name' => t("Diva Content"),
-//         'module' => 'diva',
-//         'description' => t("Diva content description")
-//     );
-
-//     return $items;
-// }
 
 function diva_admin_form($form, &$form_state) {
     $form['diva_path_to_vips'] = array(
@@ -118,10 +121,22 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     dpm($form_id);
     if ($form_id == "diva_node_form") {
         $n = $form['#node'];
+
+        $form['folder_name'] = array(
+            '#type' => 'machine_name',
+            '#title' => t("Folder Name"),
+            '#maxlength' => 128,
+            '#machine_name' => array(
+                'exists' => '_diva_folder_name_exists',
+            ),
+            '#default_value' => isset($n->nid) ? $n->folder_name : ""
+        );
+
         $form['diva_images'] = array(
             '#type' => 'file',
             '#title' => t("Image Upload")
         );
+
         $form['diva'] = array(
             '#type' => 'fieldset',
             '#title' => t("Diva Settings"),
@@ -236,15 +251,66 @@ function diva_form_alter(&$form, $form_state, $form_id) {
 }
 
 function diva_node_validate($node, $form) {
+
+    dpm($form);
     dpm("Node Validate Called");
+    $file = file_save_upload("diva_images", array(
+        'file_validate_extensions' => array('zip gz'),
+    ));
+    
+    $folder = $form['folder_name']['#value'];
+
+    dpm("Folder: " . $folder);
+
+    if($file) {
+
+        if ($file->filemime == 'application/zip') {
+
+        } else if (($file->filemime == 'application/x-gtar') || $file->filemime == 'application/x-gzip') {
+
+        } else {
+            form_set_error("diva_images", t("You can only upload zip or gzipped files (.zip, .tgz, .tar.gz)"));
+        }
+
+        if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+            if($file = file_move($file, $pth_wrap)) {
+                $form_state['storage']['file'] = $file;
+                $form_state['storage']['tdir'] = $pth;
+            } else {
+                form_set_error("diva_images", t("Could not move the file to the upload folder"));
+            }
+        } else {
+            form_set_error("diva_images", t("Failed to create a temporary upload folder."));
+        }
+    } else {
+        form_set_error("diva_images", t("No File was Entered"));
+    }
+}
+
+function diva_node_submit($form, &$form_state) {
+    dpm("Node Submit Called");
+    $file = $form_state['storage']['file'];
+    $tdir = $form_state['storage']['tdir'];
+    
+    $folder = $form['folder_name'];
+
+    $pth = "public://" . $folder;
+
+    if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+
+    } else {
+        drupal_set_message(t("Could not create the final directory"));
+    }
+
 }
 
 function diva_node_load($nodes) {
     dpm("Node Load Called");
-    // dpm($nodes);
+    dpm($nodes);
     $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
     foreach($result as $record) {
         $tn = $nodes[$record->nid];
+        $tn->folder_name = $record->folder_name;
         $tn->adaptive_padding = $record->adaptive_padding;
         $tn->fullscreen = $record->fullscreen;
         $tn->gotopage = $record->gotopage;
@@ -271,6 +337,7 @@ function diva_node_insert($node) {
     db_insert('diva_data')
         ->fields(array(
             'nid' => $node->nid,
+            'folder_name' => $node->folder_name,
             'adaptive_padding' => $node->adaptive_padding,
             'fullscreen' => $node->fullscreen,
             'gotopage' => $node->goto_page,
@@ -305,6 +372,7 @@ function diva_node_update($node) {
     dpm("Node Update Called");
     db_update('diva_data')
         ->fields(array(
+            'folder_name' => $node->folder_name,
             'adaptive_padding' => $node->adaptive_padding,
             'fullscreen' => $node->fullscreen,
             'gotopage' => $node->goto_page,
@@ -349,11 +417,8 @@ function diva_page() {
 }
 
 function diva_preprocess_node(&$vars, $hook) {
-    // dpm($vars);
-    // dpm($vars);
     drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva.js');
     drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva-utils.js');
-
     drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/diva.css", array('weight' => 9000));
     drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/pnotify.css");
 
@@ -362,6 +427,8 @@ function diva_preprocess_node(&$vars, $hook) {
     drupal_add_js(array('diva' => array(
         'adaptivePadding' => floatval($vars['adaptive_padding']),
         
+        'folder' => $vars['folder_name'],
+
         'fixedHeightGrid' => (boolean)$vars['fixed_height_grid'],
         'fullScreen' => (boolean)$vars['fullscreen'],
         'goToPage' => (boolean)$vars['gotopage'],
@@ -381,15 +448,15 @@ function diva_preprocess_node(&$vars, $hook) {
         'tileHeight' => intval($vars['tile_height']),
         'viewport' => intval($vars['viewport']),
 
-        'imageserver' => variable_get('diva_image_server', NULL)
+        'imageserver' => variable_get('diva_image_server', NULL),
 
     )), 'setting');
 
     $init_diva = '(function($) {
                         Drupal.behaviors.diva = {
                             attach: function(context, settings) {
-                                console.log(Drupal.settings.diva);
                                 d = Drupal.settings.diva;
+                                console.log(d);
                                 $("#diva-wrapper", context).diva({
                                     enableAutoTitle: false,
                                     fixedPadding: 20,
@@ -400,23 +467,23 @@ function diva_preprocess_node(&$vars, $hook) {
                                     pagesPerGridRow: d.defPagesPerRow,
                                     enableZoomSlider: d.zoomSlider,
                                     enableFullscreen: d.fullScreen,
-                                    enableGrid: Drupal.settings.diva.grid,
-                                    enableGridSlider: Drupal.settings.diva.gridSlider,
-                                    enableKeyScroll: Drupal.settings.diva.keyScroll,
-                                    enableSpaceScroll: Drupal.settings.diva.spaceScroll,
-                                    enableGotoPage: Drupal.settings.diva.goToPage,
-                                    maxPagesPerRow: Drupal.settings.diva.maxPagesPerRow,
-                                    minPagesPerRow: Drupal.settings.diva.minPagesPerRow,
-                                    pagesPerRow: Drupal.settings.diva.defPagesPerRow,
-                                    maxZoomLevel: Drupal.settings.diva.maxZoomLevel,
-                                    minZoomLevel: Drupal.settings.diva.minZoomLevel,
-                                    zoomLevel: Drupal.settings.diva.defZoomLevel,
-                                    viewportMargin: Drupal.settings.diva.viewport,
-                                    tileHeight: Drupal.settings.diva.tileHeight,
-                                    tileWidth: Drupal.settings.diva.tileWidth,
+                                    enableGrid: d.grid,
+                                    enableGridSlider: d.gridSlider,
+                                    enableKeyScroll: d.keyScroll,
+                                    enableSpaceScroll: d.spaceScroll,
+                                    enableGotoPage: d.goToPage,
+                                    maxPagesPerRow: d.maxPagesPerRow,
+                                    minPagesPerRow: d.minPagesPerRow,
+                                    pagesPerRow: d.defPagesPerRow,
+                                    maxZoomLevel: d.maxZoomLevel,
+                                    minZoomLevel: d.minZoomLevel,
+                                    zoomLevel: d.defZoomLevel,
+                                    viewportMargin: d.viewport,
+                                    tileHeight: d.tileHeight,
+                                    tileWidth: d.tileWidth,
 
-                                    iipServerBaseUrl: Drupal.settings.diva.imageserver + "?FIF=/mnt/images/berojp2/", 
-                                    backendServer: "/diva/divaserve/berojp2"
+                                    iipServerBaseUrl: d.imageserver + "?FIF=/mnt/images/berojp2/", 
+                                    backendServer: "/diva/divaserve?d=" + d.folder
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
                             }
@@ -426,6 +493,10 @@ function diva_preprocess_node(&$vars, $hook) {
 }
 
 
+function _diva_folder_name_exists() {
+    return FALSE;
+}
+
 function _parse_tile($dimensions, $return_dim) {
     $d = explode("x", $dimensions);
     if($return_dim == 'width') {
@@ -434,13 +505,3 @@ function _parse_tile($dimensions, $return_dim) {
         return $d[1];
     }
 }
-
-// function diva_theme_registry_alter(&$theme_registry) {
-//     dpm("Theme registry alter called");
-// }
-
-    // function theme_diva($variables) {
-    //     dpm("Theme template called");
-    //     return theme('diva', $variables);
-    // }
-
