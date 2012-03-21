@@ -34,6 +34,7 @@ function diva_perm() {
 }
 
 function diva_init() {
+    module_load_include("inc", "diva", "diva_upload");
 }
 
 function diva_file_mimetype_mapping_alter(&$mapping) {
@@ -114,11 +115,20 @@ function diva_admin_form($form, &$form_state) {
         '#description' => t("Default Diva File Size (wxh)")
     );
 
+    $form['diva_time_per_cron_run'] = array(
+        '#type' => 'textfield',
+        '#title' => t("Time per CRON run"),
+        '#default_value' => variable_get("diva_time_per_cron_run", 120),
+        '#size' => 12,
+        '#maxlength' => 12,
+        '#description' => t("Maximum number of seconds Diva will spend processing images per cron run.")
+    );
+
     return system_settings_form($form);
 }
 
 function diva_form_alter(&$form, $form_state, $form_id) {
-    dpm($form_id);
+    // dpm($form_id);
     if ($form_id == "diva_node_form") {
         $n = $form['#node'];
 
@@ -250,12 +260,12 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     }
 }
 
-function diva_node_validate($node, $form) {
-
-    dpm($form);
+function diva_node_validate($node, $form, &$form_state) {
+    // dpm($form);
     dpm("Node Validate Called");
+
     $file = file_save_upload("diva_images", array(
-        'file_validate_extensions' => array('zip gz'),
+        'file_validate_extensions' => array('zip'),
     ));
     
     $folder = $form['folder_name']['#value'];
@@ -279,54 +289,38 @@ function diva_node_validate($node, $form) {
                 $zip->extractTo($dest);
                 $zip->close();
                 drupal_set_message(t("Unzip was successful."));
+                $form_state['image_path'] = $dest;
             } else {
                 drupal_set_message(t("Unzip was unsuccessful."));
             }
-        } else if (($file->filemime == 'application/x-gtar') || $file->filemime == 'application/x-gzip') {
-            dpm("Targz File");
         } else {
-            form_set_error("diva_images", t("You can only upload zip or gzipped files (.zip, .tgz, .tar.gz)"));
+            form_set_error("diva_images", t("You can only upload zip files (.zip)"));
         }
-
-        // if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
-        //     if($file = file_move($file, $pth_wrap)) {
-        //         $form_state['storage']['file'] = $file;
-        //         $form_state['storage']['tdir'] = $pth;
-        //     } else {
-        //         form_set_error("diva_images", t("Could not move the file to the upload folder"));
-        //     }
-        // } else {
-        //     form_set_error("diva_images", t("Failed to create a temporary upload folder."));
-        // }
     } else {
         form_set_error("diva_images", t("No File was Entered"));
     }
 }
 
-function diva_node_submit($form, &$form_state) {
+function diva_node_submit($node, $form, &$form_state) {
     dpm("Node Submit Called");
-    // $file = $form_state['storage']['file'];
-    // $tdir = $form_state['storage']['tdir'];
-    
-    // $folder = $form['folder_name'];
+    $node->image_path = $form_state['image_path'];
+    /***** DEBUGGING ******/
+    //diva_clear_queue();
+    /***** DEBUGGING ******/
 
-    // $pth = "public://" . $folder;
+    // dpm($form_state);
+    //add images to the queue for processing.
 
-    // if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
-
-    // } else {
-    //     drupal_set_message(t("Could not create the final directory"));
-    // }
-
+    dpm($node);
 }
 
 function diva_node_load($nodes) {
     dpm("Node Load Called");
-    dpm($nodes);
+    // dpm($nodes);
     $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
     foreach($result as $record) {
         $tn = $nodes[$record->nid];
-        $tn->folder_name = $record->folder_name;
+        $tn->image_path = $record->image_path;
         $tn->adaptive_padding = $record->adaptive_padding;
         $tn->fullscreen = $record->fullscreen;
         $tn->gotopage = $record->gotopage;
@@ -350,10 +344,10 @@ function diva_node_load($nodes) {
 
 function diva_node_insert($node) {
     dpm("Node Insert Called");
-    db_insert('diva_data')
+    $dvid = db_insert('diva_data')
         ->fields(array(
             'nid' => $node->nid,
-            'folder_name' => $node->folder_name,
+            'image_path' => $node->image_path,
             'adaptive_padding' => $node->adaptive_padding,
             'fullscreen' => $node->fullscreen,
             'gotopage' => $node->goto_page,
@@ -374,6 +368,15 @@ function diva_node_insert($node) {
             'viewport' => $node->viewport
         ))
         ->execute();
+
+    $q_item = array(
+        'path' => $node->image_path,
+        'nid' => $node->nid,
+        'dvid' => $dvid
+    );
+
+    diva_insert_into_queue($q_item);
+
 }
 
 function diva_node_delete($node) {
@@ -388,7 +391,7 @@ function diva_node_update($node) {
     dpm("Node Update Called");
     db_update('diva_data')
         ->fields(array(
-            'folder_name' => $node->folder_name,
+            'image_path' => $node->image_path,
             'adaptive_padding' => $node->adaptive_padding,
             'fullscreen' => $node->fullscreen,
             'gotopage' => $node->goto_page,
@@ -443,7 +446,9 @@ function diva_preprocess_node(&$vars, $hook) {
     drupal_add_js(array('diva' => array(
         'adaptivePadding' => floatval($vars['adaptive_padding']),
         
-        'folder' => $vars['folder_name'],
+        'image_path' => $vars['image_path'],
+        'folder' => basename($vars['image_path']),
+
 
         'fixedHeightGrid' => (boolean)$vars['fixed_height_grid'],
         'fullScreen' => (boolean)$vars['fullscreen'],
@@ -498,7 +503,7 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileHeight: d.tileHeight,
                                     tileWidth: d.tileWidth,
 
-                                    iipServerBaseUrl: d.imageserver + "?FIF=/mnt/images/berojp2/", 
+                                    iipServerBaseUrl: d.imageserver + "?FIF=" + d.image_path, 
                                     backendServer: "/diva/divaserve?d=" + d.folder
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
@@ -510,6 +515,7 @@ function diva_preprocess_node(&$vars, $hook) {
 
 
 function _diva_folder_name_exists() {
+    // placeholder!! Make this actually do something.
     return FALSE;
 }
 
@@ -520,4 +526,10 @@ function _parse_tile($dimensions, $return_dim) {
     } else {
         return $d[1];
     }
+}
+/* Why doesn't PHP have a sane .startswith() method??
+ *  http://stackoverflow.com/questions/834303/php-startswith-and-endswith-functions
+ */
+function _startswith($haystack, $needle) {
+    return strpos($haystack, $needle) === 0;
 }
