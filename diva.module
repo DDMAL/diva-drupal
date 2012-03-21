@@ -80,7 +80,7 @@ function diva_menu() {
         'access callback' => TRUE,
         'page arguments' => array(2, 3),
         'type' => MENU_CALLBACK,
-        'file' => 'divaserve.inc'
+        'file' => 'diva_serve.inc'
     );
 
     return $items;
@@ -262,26 +262,42 @@ function diva_node_validate($node, $form) {
 
     dpm("Folder: " . $folder);
 
+    $pth = "public://" . $folder;
+
+    if(!file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+        form_set_error("diva_images", t("Cannot create destination folder"));
+    }
+    
+    $dest = drupal_realpath($pth);
+
     if($file) {
-
         if ($file->filemime == 'application/zip') {
-
+            $file_path = drupal_realpath($file->destination);
+            $zip = new ZipArchive;
+            $res = $zip->open($file_path);
+            if($res === TRUE) {
+                $zip->extractTo($dest);
+                $zip->close();
+                drupal_set_message(t("Unzip was successful."));
+            } else {
+                drupal_set_message(t("Unzip was unsuccessful."));
+            }
         } else if (($file->filemime == 'application/x-gtar') || $file->filemime == 'application/x-gzip') {
-
+            dpm("Targz File");
         } else {
             form_set_error("diva_images", t("You can only upload zip or gzipped files (.zip, .tgz, .tar.gz)"));
         }
 
-        if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
-            if($file = file_move($file, $pth_wrap)) {
-                $form_state['storage']['file'] = $file;
-                $form_state['storage']['tdir'] = $pth;
-            } else {
-                form_set_error("diva_images", t("Could not move the file to the upload folder"));
-            }
-        } else {
-            form_set_error("diva_images", t("Failed to create a temporary upload folder."));
-        }
+        // if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+        //     if($file = file_move($file, $pth_wrap)) {
+        //         $form_state['storage']['file'] = $file;
+        //         $form_state['storage']['tdir'] = $pth;
+        //     } else {
+        //         form_set_error("diva_images", t("Could not move the file to the upload folder"));
+        //     }
+        // } else {
+        //     form_set_error("diva_images", t("Failed to create a temporary upload folder."));
+        // }
     } else {
         form_set_error("diva_images", t("No File was Entered"));
     }
@@ -289,18 +305,18 @@ function diva_node_validate($node, $form) {
 
 function diva_node_submit($form, &$form_state) {
     dpm("Node Submit Called");
-    $file = $form_state['storage']['file'];
-    $tdir = $form_state['storage']['tdir'];
+    // $file = $form_state['storage']['file'];
+    // $tdir = $form_state['storage']['tdir'];
     
-    $folder = $form['folder_name'];
+    // $folder = $form['folder_name'];
 
-    $pth = "public://" . $folder;
+    // $pth = "public://" . $folder;
 
-    if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+    // if(file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
 
-    } else {
-        drupal_set_message(t("Could not create the final directory"));
-    }
+    // } else {
+    //     drupal_set_message(t("Could not create the final directory"));
+    // }
 
 }
 
