@@ -116,6 +116,25 @@ function diva_schema() {
                 'default' => 200,
                 'size' => 'small'
             ),
+            'queue_step_1' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'tiny'
+            ),
+            'queue_step_2' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'tiny'
+            ),
+            'total_images' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'image_dims' => array(
+                'type' => 'blob',
+                'serialize' => TRUE
+            ),
         ),
         'primary key' => array('divaid'),
         'indexes' => array(
@@ -125,6 +144,76 @@ function diva_schema() {
             'id' => array('divaid'),
         ),
     );
+
+    $schema['diva_images'] = array(
+        'description' => t(''),
+        'fields' => array(
+            'imid' => array(
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'divaid' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => 'The {diva_data} table ID'
+            ),
+            'nid' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => 'The {node} ID'
+            ),
+            'image' => array(
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE
+            ),
+            'image_width' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'image_height' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'image_cols' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'image_rows' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small',
+            ),
+            'image_max_zoom' => array(
+                'type' => 'int',
+                'default' => 0,
+                'size' => 'small'
+            ),
+            'zoom_levels' => array(
+                'type' => 'blob',
+                'serialize' => TRUE
+            ),
+        ),
+        'primary key' => array('imid'),
+        'indexes' => array(
+            'divaid' => array('divaid'),
+            'nid' => array('nid'),
+            'image_width' => array('image_width'),
+            'image_height' => array('image_height'),
+        ),
+        'unique keys' => array(
+            'id' => array('imid')
+        )
+    );
+
     return $schema;
 }
 

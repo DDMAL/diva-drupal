@@ -34,7 +34,7 @@ function diva_perm() {
 }
 
 function diva_init() {
-    module_load_include("inc", "diva", "diva_upload");
+    module_load_include("inc", "diva", "diva_process_images");
 }
 
 function diva_file_mimetype_mapping_alter(&$mapping) {
@@ -304,9 +304,6 @@ function diva_node_validate($node, $form, &$form_state) {
 function diva_node_submit($node, $form, &$form_state) {
     dpm("Node Submit Called");
     $node->image_path = $form_state['image_path'];
-    /***** DEBUGGING ******/
-    //diva_clear_queue();
-    /***** DEBUGGING ******/
 
     // dpm($form_state);
     //add images to the queue for processing.
@@ -372,10 +369,16 @@ function diva_node_insert($node) {
     $q_item = array(
         'path' => $node->image_path,
         'nid' => $node->nid,
-        'dvid' => $dvid
+        'dvid' => $dvid,
     );
 
-    diva_insert_into_queue($q_item);
+    /***** DEBUGGING ******/
+    diva_delete_image_queue_step_1();
+    diva_delete_image_queue_step_2();
+    /***** DEBUGGING ******/
+
+
+    diva_insert_image_queue_step_1($q_item);
 
 }
 
