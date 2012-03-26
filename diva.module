@@ -302,52 +302,10 @@ function diva_node_info() {
 }
 
 function diva_node_validate($node, $form, &$form_state) {
-    // dpm($form);
-    // dpm("Node Validate Called");
-
-    // $file = file_save_upload("diva_images", array(
-    //     'file_validate_extensions' => array('zip'),
-    // ));
-    
-    // $folder = $form['folder_name']['#value'];
-
-    // $pth = "public://" . $folder;
-
-    // if(!file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
-    //     form_set_error("diva_images", t("Cannot create destination folder"));
-    // }
-    
-    // $dest = drupal_realpath($pth);
-
-    // if($file) {
-    //     if ($file->filemime == 'application/zip') {
-    //         $file_path = drupal_realpath($file->destination);
-    //         $zip = new ZipArchive;
-    //         $res = $zip->open($file_path);
-    //         if($res === TRUE) {
-    //             $zip->extractTo($dest);
-    //             $zip->close();
-    //             drupal_set_message(t("Unzip was successful."));
-    //             $form_state['image_path'] = $dest;
-    //         } else {
-    //             drupal_set_message(t("Unzip was unsuccessful."));
-    //         }
-    //     } else {
-    //         form_set_error("diva_images", t("You can only upload zip files (.zip)"));
-    //     }
-    // } else {
-    //     form_set_error("diva_images", t("No File was Entered"));
-    // }
 }
 
 function diva_node_submit($node, $form, &$form_state) {
     dpm("Node Submit Called");
-    // $node->image_path = $form_state['image_path'];
-
-    // dpm($form_state);
-    //add images to the queue for processing.
-
-    // dpm($node);
 }
 
 function diva_load($nodes) {
