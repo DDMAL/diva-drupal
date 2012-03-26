@@ -20,7 +20,7 @@ function diva_schema() {
             'image_path' => array(
                 'type' => 'varchar',
                 'length' => 255,
-                'not null' => TRUE,
+                'not null' => FALSE,
             ),
             'adaptive_padding' => array(
                 'type' => 'float',
@@ -116,22 +116,12 @@ function diva_schema() {
                 'default' => 200,
                 'size' => 'small'
             ),
-            'queue_step_1' => array(
-                'type' => 'int',
-                'default' => 0,
-                'size' => 'tiny'
-            ),
-            'queue_step_2' => array(
-                'type' => 'int',
-                'default' => 0,
-                'size' => 'tiny'
-            ),
             'total_images' => array(
                 'type' => 'int',
                 'default' => 0,
                 'size' => 'small'
             ),
-            'image_dims' => array(
+            'global_image_dims' => array(
                 'type' => 'blob',
                 'serialize' => TRUE
             ),
@@ -182,16 +172,6 @@ function diva_schema() {
                 'default' => 0,
                 'size' => 'small'
             ),
-            'image_cols' => array(
-                'type' => 'int',
-                'default' => 0,
-                'size' => 'small'
-            ),
-            'image_rows' => array(
-                'type' => 'int',
-                'default' => 0,
-                'size' => 'small',
-            ),
             'image_max_zoom' => array(
                 'type' => 'int',
                 'default' => 0,
@@ -237,7 +217,7 @@ function diva_install() {
     variable_set('comment_diva', '1');
 
     variable_set('diva_image_server', 'http://example.com:9000/iipsrv.fcgi');
-    variable_set('diva_path_to_vips', '/usr/local/bin');
+    variable_set('diva_path_to_images', '/var/diva/images');
     variable_set("diva_default_tile_size", "256x256");
 
 }
@@ -247,7 +227,7 @@ function diva_uninstall() {
     drupal_uninstall_schema('diva');
     
     variable_del('comment_diva');
-    variable_del('diva_path_to_vips');
+    variable_del('diva_path_to_images');
     variable_del('diva_image_server');
     variable_del('diva_default_tile_size');
 }

@@ -66,13 +66,43 @@ function diva_menu() {
         'file path' => drupal_get_path('module', 'system'),
     );
 
-    $items['admin/config/diva/config'] = array(
+    $items['admin/config/diva/settings'] = array(
         'title' => "Diva Config",
         'description' => 'Configuration for the Diva module',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('diva_admin_form'),
         'access arguments' => array('administer diva.js'),
-        'type' => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/config/diva/settings/default'] = array(
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'title' => 'Settings',
+        'weight' => -100
+    );
+
+    $items['admin/config/diva/settings/items'] = array(
+        'title' => "Attach Images",
+        'description' => "Attach Prepared Images to Nodes",
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('diva_admin_items_form'),
+        'access arguments' => array('administer diva.js'),
+        'type' => MENU_LOCAL_TASK
+
+    );
+
+    $items['admin/config/diva/settings/testing'] = array(
+        'title' => "Testing...",
+        'page callback' => "drupal_get_form",
+        'page arguments' => array("diva_testing_form"),
+        'access arguments' => array('administer diva.js'),
+        'type' => MENU_LOCAL_TASK
+    );
+
+    $items['diva/items/attach/%/%'] = array(
+        'page callback' => 'diva_attach_pages',
+        'access arguments' => array('administer diva.js'),
+        'page arguments' => array(3, 4),
+        'type' => MENU_CALLBACK
     );
 
     $items['diva/divaserve'] = array(
@@ -88,13 +118,13 @@ function diva_menu() {
 }
 
 function diva_admin_form($form, &$form_state) {
-    $form['diva_path_to_vips'] = array(
+    $form['diva_path_to_images'] = array(
         '#type' => 'textfield',
-        '#title' => t('Path to the VIPS executable'),
-        '#default_value' => variable_get('diva_path_to_vips', '/usr/local/bin'),
-        '#size' => 12,
-        '#maxlength' => 64,
-        '#description' => t("The path where the vips software is installed."),
+        '#title' => t('Absolute path to the images'),
+        '#default_value' => variable_get('diva_path_to_images', '/var/diva/images'),
+        '#size' => 64,
+        '#maxlength' => 255,
+        '#description' => t("Absolute path on the server where the images are hosted."),
     );
 
     $form['diva_image_server'] = array(
@@ -132,20 +162,20 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     if ($form_id == "diva_node_form") {
         $n = $form['#node'];
 
-        $form['folder_name'] = array(
-            '#type' => 'machine_name',
-            '#title' => t("Folder Name"),
-            '#maxlength' => 128,
-            '#machine_name' => array(
-                'exists' => '_diva_folder_name_exists',
-            ),
-            '#default_value' => isset($n->nid) ? $n->folder_name : ""
-        );
+        // $form['folder_name'] = array(
+        //     '#type' => 'machine_name',
+        //     '#title' => t("Folder Name"),
+        //     '#maxlength' => 128,
+        //     '#machine_name' => array(
+        //         'exists' => '_diva_folder_name_exists',
+        //     ),
+        //     '#default_value' => isset($n->nid) ? $n->folder_name : ""
+        // );
 
-        $form['diva_images'] = array(
-            '#type' => 'file',
-            '#title' => t("Image Upload")
-        );
+        // $form['diva_images'] = array(
+        //     '#type' => 'file',
+        //     '#title' => t("Image Upload")
+        // );
 
         $form['diva'] = array(
             '#type' => 'fieldset',
@@ -260,165 +290,174 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     }
 }
 
+function diva_node_info() {
+    dpm("Hook node info called");
+    return array(
+        'diva' => array(
+            'name' => t("Diva Node"),
+            'base' => 'diva',
+            'description' => t("A Diva.js Node")
+        )
+    );
+}
+
 function diva_node_validate($node, $form, &$form_state) {
     // dpm($form);
-    dpm("Node Validate Called");
+    // dpm("Node Validate Called");
 
-    $file = file_save_upload("diva_images", array(
-        'file_validate_extensions' => array('zip'),
-    ));
+    // $file = file_save_upload("diva_images", array(
+    //     'file_validate_extensions' => array('zip'),
+    // ));
     
-    $folder = $form['folder_name']['#value'];
+    // $folder = $form['folder_name']['#value'];
 
-    dpm("Folder: " . $folder);
+    // $pth = "public://" . $folder;
 
-    $pth = "public://" . $folder;
-
-    if(!file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
-        form_set_error("diva_images", t("Cannot create destination folder"));
-    }
+    // if(!file_prepare_directory($pth, FILE_CREATE_DIRECTORY|FILE_MODIFY_PERMISSIONS)) {
+    //     form_set_error("diva_images", t("Cannot create destination folder"));
+    // }
     
-    $dest = drupal_realpath($pth);
+    // $dest = drupal_realpath($pth);
 
-    if($file) {
-        if ($file->filemime == 'application/zip') {
-            $file_path = drupal_realpath($file->destination);
-            $zip = new ZipArchive;
-            $res = $zip->open($file_path);
-            if($res === TRUE) {
-                $zip->extractTo($dest);
-                $zip->close();
-                drupal_set_message(t("Unzip was successful."));
-                $form_state['image_path'] = $dest;
-            } else {
-                drupal_set_message(t("Unzip was unsuccessful."));
-            }
-        } else {
-            form_set_error("diva_images", t("You can only upload zip files (.zip)"));
-        }
-    } else {
-        form_set_error("diva_images", t("No File was Entered"));
-    }
+    // if($file) {
+    //     if ($file->filemime == 'application/zip') {
+    //         $file_path = drupal_realpath($file->destination);
+    //         $zip = new ZipArchive;
+    //         $res = $zip->open($file_path);
+    //         if($res === TRUE) {
+    //             $zip->extractTo($dest);
+    //             $zip->close();
+    //             drupal_set_message(t("Unzip was successful."));
+    //             $form_state['image_path'] = $dest;
+    //         } else {
+    //             drupal_set_message(t("Unzip was unsuccessful."));
+    //         }
+    //     } else {
+    //         form_set_error("diva_images", t("You can only upload zip files (.zip)"));
+    //     }
+    // } else {
+    //     form_set_error("diva_images", t("No File was Entered"));
+    // }
 }
 
 function diva_node_submit($node, $form, &$form_state) {
     dpm("Node Submit Called");
-    $node->image_path = $form_state['image_path'];
+    // $node->image_path = $form_state['image_path'];
 
     // dpm($form_state);
     //add images to the queue for processing.
 
-    dpm($node);
+    // dpm($node);
 }
 
-function diva_node_load($nodes) {
+function diva_load($nodes) {
     dpm("Node Load Called");
-    // dpm($nodes);
-    $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
-    foreach($result as $record) {
-        $tn = $nodes[$record->nid];
-        $tn->image_path = $record->image_path;
-        $tn->adaptive_padding = $record->adaptive_padding;
-        $tn->fullscreen = $record->fullscreen;
-        $tn->gotopage = $record->gotopage;
-        $tn->grid = $record->grid;
-        $tn->gridslider = $record->gridslider;
-        $tn->keyscroll = $record->keyscroll;
-        $tn->spacescroll = $record->spacescroll;
-        $tn->zoomslider = $record->zoomslider;
-        $tn->fixed_height_grid = $record->fixed_height_grid;
-        $tn->max_pages_per_row = $record->max_pages_per_row;
-        $tn->min_pages_per_row = $record->min_pages_per_row;
-        $tn->def_pages_per_row = $record->def_pages_per_row;
-        $tn->max_zoomlevel = $record->max_zoomlevel;
-        $tn->min_zoomlevel = $record->min_zoomlevel;
-        $tn->def_zoomlevel = $record->def_zoomlevel;
-        $tn->tile_width = $record->tile_width;
-        $tn->tile_height = $record->tile_height;
-        $tn->viewport = $record->viewport;
+    // $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
+    $result = db_select("diva_data", "d")
+                ->fields("d")
+                ->condition("nid", array_keys($nodes), "IN")
+                ->execute();
+
+    while($record = $result->fetchAssoc()) {
+        $tn = $nodes[$record['nid']];
+        $tn->adaptive_padding = $record['adaptive_padding'];
+        $tn->fullscreen = $record['fullscreen'];
+        $tn->gotopage = $record['gotopage'];
+        $tn->grid = $record['grid'];
+        $tn->gridslider = $record['gridslider'];
+        $tn->keyscroll = $record['keyscroll'];
+        $tn->spacescroll = $record['spacescroll'];
+        $tn->zoomslider = $record['zoomslider'];
+        $tn->fixed_height_grid = $record['fixed_height_grid'];
+        $tn->max_pages_per_row = $record['max_pages_per_row'];
+        $tn->min_pages_per_row = $record['min_pages_per_row'];
+        $tn->def_pages_per_row = $record['def_pages_per_row'];
+        $tn->max_zoomlevel = $record['max_zoomlevel'];
+        $tn->min_zoomlevel = $record['min_zoomlevel'];
+        $tn->def_zoomlevel = $record['def_zoomlevel'];
+        $tn->tile_width = $record['tile_width'];
+        $tn->tile_height = $record['tile_height'];
+        $tn->viewport = $record['viewport'];
     }
 }
 
 function diva_node_insert($node) {
     dpm("Node Insert Called");
-    $dvid = db_insert('diva_data')
-        ->fields(array(
-            'nid' => $node->nid,
-            'image_path' => $node->image_path,
-            'adaptive_padding' => $node->adaptive_padding,
-            'fullscreen' => $node->fullscreen,
-            'gotopage' => $node->goto_page,
-            'grid' => $node->grid,
-            'gridslider' => $node->grid_slider,
-            'keyscroll' => $node->keyscroll,
-            'spacescroll' => $node->spacescroll,
-            'zoomslider' => $node->zoomslider,
-            'fixed_height_grid' => $node->fixed_height_grid,
-            'max_pages_per_row' => $node->max_pages_per_row,
-            'min_pages_per_row' => $node->min_pages_per_row,
-            'def_pages_per_row' => $node->def_pages_per_row,
-            'max_zoomlevel' => $node->max_zoomlevel,
-            'min_zoomlevel' => $node->min_zoomlevel,
-            'def_zoomlevel' => $node->def_zoomlevel,
-            'tile_width' => $node->tile_width,
-            'tile_height' => $node->tile_height,
-            'viewport' => $node->viewport
-        ))
-        ->execute();
+    if($node->type == "diva") {
+        $dvid = db_insert('diva_data')
+            ->fields(array(
+                'nid' => $node->nid,
+                'adaptive_padding' => $node->adaptive_padding,
+                'fullscreen' => $node->fullscreen,
+                'gotopage' => $node->goto_page,
+                'grid' => $node->grid,
+                'gridslider' => $node->grid_slider,
+                'keyscroll' => $node->keyscroll,
+                'spacescroll' => $node->spacescroll,
+                'zoomslider' => $node->zoomslider,
+                'fixed_height_grid' => $node->fixed_height_grid,
+                'max_pages_per_row' => $node->max_pages_per_row,
+                'min_pages_per_row' => $node->min_pages_per_row,
+                'def_pages_per_row' => $node->def_pages_per_row,
+                'max_zoomlevel' => $node->max_zoomlevel,
+                'min_zoomlevel' => $node->min_zoomlevel,
+                'def_zoomlevel' => $node->def_zoomlevel,
+                'tile_width' => $node->tile_width,
+                'tile_height' => $node->tile_height,
+                'viewport' => $node->viewport
+            ))
+            ->execute();
+    }
 
-    $q_item = array(
-        'path' => $node->image_path,
-        'nid' => $node->nid,
-        'dvid' => $dvid,
-    );
+    // $q_item = array(
+    //     'path' => $node->image_path,
+    //     'nid' => $node->nid,
+    //     'dvid' => $dvid,
+    // );
 
-    /***** DEBUGGING ******/
-    diva_delete_image_queue_step_1();
-    diva_delete_image_queue_step_2();
-    /***** DEBUGGING ******/
-
-
-    diva_insert_image_queue_step_1($q_item);
+    // diva_insert_image_queue_step_1($q_item);
 
 }
 
 function diva_node_delete($node) {
     dpm("Node Delete Called");
-    db_delete('diva_data')
-        ->condition('nid', $node->nid)
-        ->execute();
-
+    if($node->type == "diva") {
+        db_delete('diva_data')
+            ->condition('nid', $node->nid)
+            ->execute();
+    }
 }
 
 function diva_node_update($node) {
     dpm("Node Update Called");
-    db_update('diva_data')
-        ->fields(array(
-            'image_path' => $node->image_path,
-            'adaptive_padding' => $node->adaptive_padding,
-            'fullscreen' => $node->fullscreen,
-            'gotopage' => $node->goto_page,
-            'grid' => $node->grid,
-            'gridslider' => $node->grid_slider,
-            'keyscroll' => $node->keyscroll,
-            'spacescroll' => $node->spacescroll,
-            'zoomslider' => $node->zoomslider,
-            'fixed_height_grid' => $node->fixed_height_grid,
-            'max_pages_per_row' => $node->max_pages_per_row,
-            'min_pages_per_row' => $node->min_pages_per_row,
-            'def_pages_per_row' => $node->def_pages_per_row,
-            'max_zoomlevel' => $node->max_zoomlevel,
-            'min_zoomlevel' => $node->min_zoomlevel,
-            'def_zoomlevel' => $node->def_zoomlevel,
-            'tile_width' => $node->tile_width,
-            'tile_height' => $node->tile_height,
-            'viewport' => $node->viewport
-        ))
-        ->condition('nid', $node->nid)
-        ->execute();
+    if($node->type == "diva") {
+        db_update('diva_data')
+            ->fields(array(
+                'adaptive_padding' => $node->adaptive_padding,
+                'fullscreen' => $node->fullscreen,
+                'gotopage' => $node->goto_page,
+                'grid' => $node->grid,
+                'gridslider' => $node->grid_slider,
+                'keyscroll' => $node->keyscroll,
+                'spacescroll' => $node->spacescroll,
+                'zoomslider' => $node->zoomslider,
+                'fixed_height_grid' => $node->fixed_height_grid,
+                'max_pages_per_row' => $node->max_pages_per_row,
+                'min_pages_per_row' => $node->min_pages_per_row,
+                'def_pages_per_row' => $node->def_pages_per_row,
+                'max_zoomlevel' => $node->max_zoomlevel,
+                'min_zoomlevel' => $node->min_zoomlevel,
+                'def_zoomlevel' => $node->def_zoomlevel,
+                'tile_width' => $node->tile_width,
+                'tile_height' => $node->tile_height,
+                'viewport' => $node->viewport
+            ))
+            ->condition('nid', $node->nid)
+            ->execute();
+    }
 }
 
-function diva_node_view($node, $build_mode = "full") {
+function diva_node_diva_view($node, $build_mode = "full") {
     dpm("Node View Called");
     // dpm($node);
 }
@@ -434,8 +473,87 @@ function diva_theme() {
 }
 
 function diva_page() {
-    $content = "Hello.";
-    return theme('diva', $content);
+}
+
+function diva_admin_items_form($form, &$form_state) {
+    $tarr = array();
+    $header = array("Status", 'Path', "Operations");
+    $idir = variable_get('diva_path_to_images', "/var/diva/images");
+
+    /// we'll need to check if the nodes exist and are diva nodes.
+    $nodes = db_select('node', 'n')
+            ->fields('n', array(
+                'nid',
+            ))
+            ->condition('type', 'diva')
+            ->execute();
+    $nids = $nodes->fetchCol('nid');
+
+    $divas = db_select("diva_data", "d")
+            ->fields("d", array(
+                'nid',
+                'divaid'
+            ))
+            ->execute();
+    
+    $divanodes = array();
+    while($dnode = $divas->fetchAssoc()) {
+        $divanodes[$dnode['nid']] = $dnode['divaid'];
+    }
+
+    $diva_images = db_select("diva_images", "i")
+                    ->fields("i", array(
+                        'nid',
+                    ))
+                    ->groupBy("nid")
+                    ->execute();    
+    $imgs = $diva_images->fetchCol('nid');
+
+    if($handle = opendir($idir)) {
+        while (false !== ($entry = readdir($handle))) {
+            if(!is_dir($idir . "/" . $entry) || _startswith($entry, ".")) {
+                // skip anything in this directory that is not a folder, including .git or .svn files.
+                continue;
+            }
+
+            // first, check if there is a node that corresponds to the folder.
+            $status = (in_array($entry, $nids)) ? TRUE : FALSE;
+
+            // then check if it's already attached
+            if($status) {
+                $is_attached = (array_key_exists($entry, $divanodes)) ? TRUE : FALSE;
+                $is_processed = (in_array($entry, $imgs)) ? TRUE : FALSE;
+            }
+
+            if (!$status) {
+                // there is no node
+                $ops = "No Node!";
+            } else {
+                if($is_attached && $is_processed) {
+                    $ops = l(t("Re-Attach"), 'diva/items/attach/' . $entry . "/" . $divanodes[$entry]);
+                } else if ($is_attached && !$is_processed) {
+                    $ops = l(t("Attach"), 'diva/items/attach/' . $entry . "/" . $divanodes[$entry]);
+                } else {
+                    $ops = "UHOHS";
+                }
+            }
+
+            $tarr[] = array('data' => array(
+                $status,
+                $idir . "/" . $entry,
+                $ops
+            ));
+        }
+    }
+
+    $build = array();
+    $build['tablesort_table'] = array(
+        '#theme' => 'table',
+        '#header' => $header,
+        '#rows' => $tarr
+    );
+
+    return $build;
 }
 
 function diva_preprocess_node(&$vars, $hook) {
@@ -449,8 +567,8 @@ function diva_preprocess_node(&$vars, $hook) {
     drupal_add_js(array('diva' => array(
         'adaptivePadding' => floatval($vars['adaptive_padding']),
         
-        'image_path' => $vars['image_path'],
-        'folder' => basename($vars['image_path']),
+        'nid' => $vars['nid'],
+        'image_path' => variable_get("diva_path_to_images", "/var/diva/images"),
 
 
         'fixedHeightGrid' => (boolean)$vars['fixed_height_grid'],
@@ -507,7 +625,7 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileWidth: d.tileWidth,
 
                                     iipServerBaseUrl: d.imageserver + "?FIF=" + d.image_path, 
-                                    backendServer: "/diva/divaserve?d=" + d.folder
+                                    backendServer: "/diva/divaserve?d=" + d.nid
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
                             }
@@ -516,6 +634,18 @@ function diva_preprocess_node(&$vars, $hook) {
     drupal_add_js($init_diva, array('type' => 'inline', 'preprocess' => TRUE));
 }
 
+function diva_attach_pages($nid, $divaid) {
+    $qitem = array(
+        'path' => variable_get("diva_path_to_images", "/var/diva/images") . "/" . $nid,
+        'nid' => $nid,
+        'dvid' => $divaid
+    );
+
+    diva_insert_image_queue_step_1($qitem);
+    drupal_set_message(t("The Node Was Queued for Processing"));
+
+    drupal_goto("admin/config/diva/settings/items");
+}
 
 function _diva_folder_name_exists() {
     // placeholder!! Make this actually do something.
@@ -536,3 +666,30 @@ function _parse_tile($dimensions, $return_dim) {
 function _startswith($haystack, $needle) {
     return strpos($haystack, $needle) === 0;
 }
+# ======
+
+function diva_testing_form($form, &$form_state) {
+
+    /***** DEBUGGING ******/
+    // diva_delete_image_queue_step_1();
+    // diva_delete_image_queue_step_2();
+    /***** DEBUGGING ******/
+    $imgs = db_select("diva_images", 'd')
+            ->fields('d')
+            ->condition("divaid", 1)
+            ->execute();
+
+    while($img = $imgs->fetchAssoc()) {
+        dpm(unserialize($img['zoom_levels']));
+
+    }
+
+
+    return array();
+}
+
+
+
+
+
+

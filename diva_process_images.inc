@@ -42,13 +42,15 @@ function diva_insert_image_queue_step_1($queue_item) {
                 ->execute();
 
             $queue_item['image_id'] = $imid;
+            $queue_item['image_filename'] = $entry;
             $q->createItem($queue_item);
             $i++;
         }
 
         db_update('diva_data')
             ->fields(array(
-                'total_images' => $i
+                'total_images' => $i,
+                'image_path' => $dest
             ))
             ->condition('divaid', $queue_item['dvid'])
             ->execute();
@@ -80,25 +82,22 @@ function diva_cron_queue_info() {
 
 function diva_process_images_step_1($item) {
     // takes in a queue item.
-    $tot = db_select("diva_data", "d")
+    $ddata = db_select("diva_data", "d")
             ->fields("d", array(
-                "total_images"
+                "total_images",
+                "tile_width",
+                "tile_height"
             ))
             ->condition("divaid", $item['dvid'])
             ->execute()
             ->fetchAssoc();
 
-    dpm("Total:");
-    dpm($tot);
-
-    $img_size = getimagesize($item['path']);
-
-    error_log($img_size);
+    $img_size = getimagesize($item['path'] . "/" . $item['image_filename']);
 
     $img_wid = $img_size[0];
     $img_hei = $img_size[1];
 
-    $img_zoom = _diva_get_max_zoom_level($img_wid, $img_hei, $item['twid'], $item['thei']);
+    $img_zoom = _diva_get_max_zoom_level($img_wid, $img_hei, $ddata['tile_width'], $ddata['tile_height']);
 
     db_update("diva_images")
             ->fields(array(
@@ -111,7 +110,7 @@ function diva_process_images_step_1($item) {
 
     $proc = variable_get("diva_proc_num_images_" . $item['dvid'] . "_step_1", 0);
     $proc++;
-    if($proc == $tot['total_images']) {
+    if($proc == $ddata['total_images']) {
         // set step 1 complete
         $dims = db_query("SELECT MAX(image_height) AS maxh, MAX(image_width) AS maxw, 
                                  MAX(image_max_zoom) AS maxz, MIN(image_max_zoom) AS minz,
@@ -125,8 +124,7 @@ function diva_process_images_step_1($item) {
 
         db_update("diva_data")
             ->fields(array(
-                'queue_step_1' => 1,
-                'image_dims' => serialize($dims)
+                'global_image_dims' => serialize($dims)
             ))
             ->condition("divaid", $item['dvid'])
             ->execute();
@@ -135,11 +133,10 @@ function diva_process_images_step_1($item) {
         $imgs = db_select("diva_images", "d")
             ->fields('d')
             ->condition("divaid", $item['dvid'])
-            ->execute()
-            ->fetchAssoc();
+            ->execute();
         
         $q2 = diva_get_image_queue_step_2();
-        foreach ($imgs as $img) {
+        while($img = $imgs->fetchAssoc()) {
             $qitem = array(
                 'imid' => $img['imid'],
                 'divaid' => $img['divaid']
@@ -151,9 +148,9 @@ function diva_process_images_step_1($item) {
     }
 }
 
-function _diva_get_max_zoom_level($iwid, $ihei, $t_wid, $t_hei) {
-    $largest_dim = ($img_wid > $img_hei) ? $img_wid : $img_hei;
-    $t_dim = ($img_wid > $img_hei) ? $t_wid : $t_hei;
+function _diva_get_max_zoom_level($i_wid, $i_hei, $t_wid, $t_hei) {
+    $largest_dim = ($i_wid > $i_hei) ? $i_wid : $i_hei;
+    $t_dim = ($i_wid > $i_hei) ? $t_wid : $t_hei;
     $zoom_levels = ceil(log(($largest_dim + 1)/($t_dim + 1), 2));
     return intval($zoom_levels);
 }
@@ -164,9 +161,9 @@ function _diva_incorporate_zoom($img_dim, $zoom_difference) {
 
 function diva_process_images_step_2($item) {
     // takes in a queue item.
-    $image_dims = db_select("diva_data", 'd')
+    $image_data = db_select("diva_data", 'd')
                     ->fields('d', array(
-                        'image_dims',
+                        'global_image_dims',
                         'tile_width',
                         'tile_height'
                     ))
@@ -174,21 +171,22 @@ function diva_process_images_step_2($item) {
                     ->execute()
                     ->fetchAssoc();
     
+    $dims = unserialize($image_data['global_image_dims']);
+
     $imgs = db_select("diva_images", 'd')
             ->fields('d')
             ->condition("divaid", $item['divaid'])
-            ->execute()
-            ->fetchAssoc();
+            ->execute();
 
-    foreach($imgs as $img) {
+    while($img = $imgs->fetchAssoc()) {
         $iarr = array();
-        for ($i=0; $i < $image_dims['minz']; $i++) { 
-                $h = _diva_incorporate_zoom($img['image_width'], $image_dims['minz'] - $i);
-                $w = _diva_incorporate_zoom($img['image_height'], $image_dims['minz'] - $i);
-                $c = ceil($w / $image_dims['tile_width']);
-                $r = ceil($h / $image_dims['tile_height']);
-                $m_z = $img['max_zoom'];
-                $fn = "";
+        for ($i=0; $i <= $dims['minz']; $i++) { 
+                $h = _diva_incorporate_zoom($img['image_height'], $dims['minz'] - $i);
+                $w = _diva_incorporate_zoom($img['image_width'], $dims['minz'] - $i);
+                $c = ceil($w / $image_data['tile_width']);
+                $r = ceil($h / $image_data['tile_height']);
+                $m_z = $img['image_max_zoom'];
+                $fn = $img['image'];
                 $iarr[$i] = array(
                     'c' => $c,
                     'r' => $r,
@@ -205,5 +203,12 @@ function diva_process_images_step_2($item) {
             ->condition('imid', $img['imid'])
             ->execute();
     }
+}
+
+function diva_is_done_step_1() {
+
+}
+
+function diva_is_done_step_2() {
 
 }
