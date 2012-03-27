@@ -5,7 +5,7 @@
  */
 
 /**
- * Implements hook_help.
+ * Implements hook_help().
  *
  * Displays help and module information
  *
@@ -157,6 +157,17 @@ function diva_admin_form($form, &$form_state) {
     return system_settings_form($form);
 }
 
+function diva_admin_form_validate(&$form, $form_state) {
+    dpm("Diva Admin Form Validate called");
+    if(!is_dir($form['diva_path_to_images']['#value'])) {
+        form_set_error('diva_path_to_images', t("The Image Directory does not exist"));
+    }
+
+    // check if the image server can be contacted
+
+
+}
+
 function diva_form_alter(&$form, $form_state, $form_id) {
     // dpm($form_id);
     if ($form_id == "diva_node_form") {
@@ -290,16 +301,18 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     }
 }
 
-function diva_node_info() {
-    dpm("Hook node info called");
-    return array(
-        'diva' => array(
-            'name' => t("Diva Node"),
-            'base' => 'diva',
-            'description' => t("A Diva.js Node")
-        )
-    );
-}
+// function diva_node_info() {
+//     dpm("Hook node info called");
+//     return array(
+//         'diva' => array(
+//             'name' => t("Diva Node"),
+//             'base' => 'node_content',
+//             'description' => t("A Diva.js Node"),
+//             'has_title' => TRUE,
+//             'title_label' => t("Title")
+//         )
+//     );
+// }
 
 function diva_node_validate($node, $form, &$form_state) {
 }
@@ -308,8 +321,11 @@ function diva_node_submit($node, $form, &$form_state) {
     dpm("Node Submit Called");
 }
 
-function diva_load($nodes) {
+function diva_node_load($nodes) {
     dpm("Node Load Called");
+
+    // fetch all the diva nodes
+
     // $result = db_query('SELECT * FROM {diva_data}  WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
     $result = db_select("diva_data", "d")
                 ->fields("d")
@@ -337,6 +353,8 @@ function diva_load($nodes) {
         $tn->tile_height = $record['tile_height'];
         $tn->viewport = $record['viewport'];
     }
+
+    dpm($nodes);
 }
 
 function diva_node_insert($node) {
@@ -438,6 +456,11 @@ function diva_admin_items_form($form, &$form_state) {
     $header = array("Status", 'Path', "Operations");
     $idir = variable_get('diva_path_to_images', "/var/diva/images");
 
+    if (!is_dir($idir)) {
+        drupal_set_message(t("The Image Directory does not exist. Please check your " . l("Diva Configuration", 'admin/config/diva/settings') . "."), 'error');
+        return;
+    }
+
     /// we'll need to check if the nodes exist and are diva nodes.
     $nodes = db_select('node', 'n')
             ->fields('n', array(
@@ -486,13 +509,17 @@ function diva_admin_items_form($form, &$form_state) {
             if (!$status) {
                 // there is no node
                 $ops = "No Node!";
+                $style = '';
             } else {
                 if($is_attached && $is_processed) {
                     $ops = l(t("Re-Attach"), 'diva/items/attach/' . $entry . "/" . $divanodes[$entry]);
+                    $style = 'ok';
                 } else if ($is_attached && !$is_processed) {
                     $ops = l(t("Attach"), 'diva/items/attach/' . $entry . "/" . $divanodes[$entry]);
+                    $style = 'warning';
                 } else {
-                    $ops = "UHOHS";
+                    $ops = "There was a problem.";
+                    $style = 'error';
                 }
             }
 
@@ -500,7 +527,7 @@ function diva_admin_items_form($form, &$form_state) {
                 $status,
                 $idir . "/" . $entry,
                 $ops
-            ));
+            ), 'class' => array($style));
         }
     }
 
@@ -515,6 +542,10 @@ function diva_admin_items_form($form, &$form_state) {
 }
 
 function diva_preprocess_node(&$vars, $hook) {
+    if($vars['type'] != 'diva') {
+        return;
+    }
+
     drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva.js');
     drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva-utils.js');
     drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/diva.css", array('weight' => 9000));

@@ -207,7 +207,9 @@ function diva_install() {
         'base' => 'node_content',
         'description' => $t("A Diva.js node"),
         'title_label' => $t("Title"),
-        'custom' => TRUE
+        'custom' => TRUE,
+        'modified' => TRUE,
+        'locked' => FALSE
     );
 
     $content_type = node_type_set_defaults($diva);
