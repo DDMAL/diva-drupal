@@ -276,6 +276,26 @@ function diva_install() {
 
 }
 
+function diva_requirements($phase) {
+    $requirements = array();
+    $t = get_t();
+    if (($phase == 'runtime') || ($phase == 'install')) {
+        if ($path = libraries_get_path('diva.js')) {
+            $requirements['diva.js'] = array('title' => $t("Diva.js Library"));
+            if (!file_exists($path . '/js/diva.min.js')) {
+                $requirements['diva.js']['value'] = $t("Missing");
+                $requirements['diva.js']['description'] = $t("You must download the Diva.js library.");
+                $requirements['diva.js']['severity'] = REQUIREMENT_ERROR; 
+            } else {
+                $requirements['diva.js']['value'] = $t("Installed");
+                $requirements['diva.js']['severity'] = REQUIREMENT_OK;
+                watchdog("diva", t("The Diva module was successfully enabled"));
+            }
+        }
+    }
+    return $requirements;
+}
+
 function diva_uninstall() {
     node_type_delete('diva');
     drupal_uninstall_schema('diva');

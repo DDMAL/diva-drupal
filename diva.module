@@ -267,7 +267,7 @@ function diva_form_alter(&$form, $form_state, $form_id) {
             '#type' => 'textfield',
             '#title' => t("Max Zoom"),
             '#description' => t("Maximum Zoom level"),
-            '#default_value' => isset($n->nid) ? $n->max_zoomlevel : 0,
+            '#default_value' => isset($n->nid) ? $n->max_zoomlevel : -1,
         );
         $form['diva']['min_zoomlevel'] = array(
             '#type' => 'textfield',
@@ -304,18 +304,23 @@ function diva_form_alter(&$form, $form_state, $form_id) {
     }
 }
 
-// function diva_node_info() {
-//     dpm("Hook node info called");
-//     return array(
-//         'diva' => array(
-//             'name' => t("Diva Node"),
-//             'base' => 'node_content',
-//             'description' => t("A Diva.js Node"),
-//             'has_title' => TRUE,
-//             'title_label' => t("Title")
-//         )
-//     );
-// }
+function diva_node_info() {
+    dpm("Hook node info called");
+    $libraries['diva.js'] = array(
+        'name' => 'Diva.js',
+        'vendor url' => 'http://github.com/DDMAL/diva.js',
+        'files' => array(
+            'js' => array(
+                'js/diva.min.js'
+            ),
+            'css' => array(
+                'css/diva.min.css'
+            )
+        )
+    );
+
+    return $libraries;
+}
 
 function diva_node_validate($node, $form, &$form_state) {
 }
@@ -553,19 +558,18 @@ function diva_preprocess_node(&$vars, $hook) {
         return;
     }
 
-    drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva.js');
-    drupal_add_js(drupal_get_path('module', 'diva') . '/diva.js/js/diva-utils.js');
-    drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/diva.css", array('weight' => 9000));
-    drupal_add_css(drupal_get_path('module', 'diva') . "/diva.js/css/pnotify.css");
+    drupal_add_js(libraries_get_path('diva.js') . '/js/diva.min.js');
+    drupal_add_css(libraries_get_path('diva.js') . "/css/diva.min.css", array('weight' => 9000));
 
-    drupal_add_library('system', 'ui.slider');
+    // drupal_add_library('system', 'ui.slider');
+
+    // dpm($vars);
 
     drupal_add_js(array('diva' => array(
         'adaptivePadding' => floatval($vars['adaptive_padding']),
         
         'divaid' => $vars['divaid'],
-        'image_path' => variable_get("diva_path_to_images", "/var/diva/images"),
-
+        'image_path' => variable_get("diva_path_to_images", "/tmp/images"),
 
         'fixedHeightGrid' => (boolean)$vars['fixed_height_grid'],
         'fullScreen' => (boolean)$vars['fullscreen'],
@@ -593,11 +597,11 @@ function diva_preprocess_node(&$vars, $hook) {
                         Drupal.behaviors.diva = {
                             attach: function(context, settings) {
                                 d = Drupal.settings.diva;
-                                console.log(d);
                                 $("#diva-wrapper", context).diva({
                                     enableAutoTitle: false,
                                     fixedPadding: 20,
                                     tileFadeSpeed: 0,
+                                    contained: true,
                                     adaptivePadding: d.adaptivePadding,
                                     fixedHeightGrid: d.fixedHeightGrid,
                                     pagesPerGridRow: d.defPagesPerRow,
@@ -618,8 +622,8 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileHeight: d.tileHeight,
                                     tileWidth: d.tileWidth,
 
-                                    iipServerBaseUrl: d.imageserver + "?FIF=" + d.image_path,
-                                    backendServer: "/diva/divaserve?d=" + d.divaid
+                                    iipServerURL: d.imageserver + "?FIF=" + d.image_path,
+                                    divaserveURL: "/diva/divaserve?d=" + d.divaid
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
                             }
