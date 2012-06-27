@@ -6,9 +6,9 @@
 
 function diva_ajax_callback() {
     $divaid = preg_replace('/[^-a-zA-Z0-9_]/', '', $_GET['d']);
-    $zoom = preg_replace('/[^0-9]/', '', $_GET['z']);
+    // $zoom = preg_replace('/[^0-9]/', '', $_GET['z']);
 
-    $cachekey = $divaid . "-" . $zoom;
+    $cachekey = 'diva-' . $divaid;
 
     if ($cached = cache_get($cachekey, 'cache_diva')) {
         return drupal_json_output($cached->data);

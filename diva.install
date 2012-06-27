@@ -135,6 +135,11 @@ function diva_schema() {
                 'serialize' => TRUE,
                 'size' => 'big'
             ),
+            'plugins' => array(
+                'type' => 'blob',
+                'serialize' => TRUE,
+                'size' => 'big'
+            )
         ),
         'primary key' => array('divaid'),
         'indexes' => array(
@@ -270,9 +275,10 @@ function diva_install() {
     // disable comments by default
     variable_set('comment_diva', '1');
 
-    variable_set('diva_image_server', 'http://example.com:9000/iipsrv.fcgi');
-    variable_set('diva_path_to_images', '/var/diva/images');
+    variable_set("diva_image_server", 'http://example.com:9000/iipsrv.fcgi');
+    variable_set("diva_path_to_images", '/var/diva/images');
     variable_set("diva_default_tile_size", "256x256");
+    variable_set("diva_plugins", 0);
 
 }
 
@@ -282,7 +288,7 @@ function diva_requirements($phase) {
     if (($phase == 'runtime') || ($phase == 'install')) {
         if ($path = libraries_get_path('diva.js')) {
             $requirements['diva.js'] = array('title' => $t("Diva.js Library"));
-            if (!file_exists($path . '/js/diva.min.js')) {
+            if (!file_exists($path . '/js/diva.js')) {
                 $requirements['diva.js']['value'] = $t("Missing");
                 $requirements['diva.js']['description'] = $t("You must download the Diva.js library.");
                 $requirements['diva.js']['severity'] = REQUIREMENT_ERROR; 
@@ -304,6 +310,7 @@ function diva_uninstall() {
     variable_del('diva_path_to_images');
     variable_del('diva_image_server');
     variable_del('diva_default_tile_size');
+    variable_del('diva_plugins');
 }
 
 function _diva_installed_fields() {

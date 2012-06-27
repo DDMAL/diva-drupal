@@ -157,6 +157,13 @@ function diva_admin_form($form, &$form_state) {
         '#description' => t("Maximum number of seconds Diva will spend processing images per cron run.")
     );
 
+    $form['diva_plugins'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Activate Diva Plugins'),
+        '#default_value' => variable_get('diva_plugins', 0),
+        '#description' => t("Use only if you know the Canvas and Download plugins are available in your minified Diva.js.")
+    );
+
     return system_settings_form($form);
 }
 
@@ -301,6 +308,22 @@ function diva_form_alter(&$form, $form_state, $form_id) {
             '#description' => t("The value of the adaptive padding setting"),
             '#default_value' => isset($n->nid) ? $n->adaptive_padding : 0.05
         );
+
+        if(variable_get('diva_plugins', 0) == 1) {
+            $plugins = unserialize($n->plugins);
+            
+            $form['diva']['canvas_plugin'] = array(
+                '#type' => 'checkbox',
+                '#default_value' => isset($n->nid) ? $plugins['canvas'] : 0,
+                '#title' => t("Enable plugins")
+            );
+            $form['diva']['download_plugin'] = array(
+                '#type' => 'checkbox',
+                '#default_value' => isset($n->nid) ? $plugins['download'] : 0,
+                '#title' => t("Enable plugins")
+            );
+
+        }
     }
 }
 
@@ -311,7 +334,7 @@ function diva_node_info() {
         'vendor url' => 'http://github.com/DDMAL/diva.js',
         'files' => array(
             'js' => array(
-                'js/diva.min.js'
+                'js/diva.js'
             ),
             'css' => array(
                 'css/diva.min.css'
@@ -326,7 +349,9 @@ function diva_node_validate($node, $form, &$form_state) {
 }
 
 function diva_node_submit($node, $form, &$form_state) {
-    // dpm("Node Submit Called");
+    dpm("Node Submit Called");
+
+    dpm($form);
 }
 
 function diva_node_load($nodes) {
@@ -361,6 +386,13 @@ function diva_node_load($nodes) {
         $tn->tile_width = $record['tile_width'];
         $tn->tile_height = $record['tile_height'];
         $tn->viewport = $record['viewport'];
+
+        if(variable_get('diva_plugins', 0) == 1) {
+            $plugins = unserialize($record['plugins']);
+            $tn->canvas_plugin = $plugins['canvas'];
+            $tn->download_plugin = $plugins['download'];
+        }
+
     }
 
     // dpm($nodes);
@@ -559,15 +591,14 @@ function diva_preprocess_node(&$vars, $hook) {
     }
 
     drupal_add_js(libraries_get_path('diva.js') . '/js/diva.min.js');
+    // drupal_add_js(libraries_get_path('diva.js') . '/js/utils.js');
+    // drupal_add_js(libraries_get_path('diva.js') . '/js/plugins/canvas.js');
     drupal_add_css(libraries_get_path('diva.js') . "/css/diva.min.css", array('weight' => 9000));
 
-    // drupal_add_library('system', 'ui.slider');
-
-    // dpm($vars);
-
+    drupal_add_library('system', 'ui.slider');
     drupal_add_js(array('diva' => array(
         'adaptivePadding' => floatval($vars['adaptive_padding']),
-        
+        'nodeid' => $vars['nid'],
         'divaid' => $vars['divaid'],
         'image_path' => variable_get("diva_path_to_images", "/tmp/images"),
 
@@ -590,7 +621,6 @@ function diva_preprocess_node(&$vars, $hook) {
         'viewport' => intval($vars['viewport']),
 
         'imageserver' => variable_get('diva_image_server', NULL),
-
     )), 'setting');
 
     $init_diva = '(function($) {
@@ -622,14 +652,16 @@ function diva_preprocess_node(&$vars, $hook) {
                                     tileHeight: d.tileHeight,
                                     tileWidth: d.tileWidth,
 
-                                    iipServerURL: d.imageserver + "?FIF=" + d.image_path,
-                                    divaserveURL: "/diva/divaserve?d=" + d.divaid
+                                    iipServerURL: d.imageserver + "?FIF=" + d.image_path + d.nodeid + "/",
+                                    divaserveURL: "/diva/divaserve",
+                                    imageDir: d.divaid
                                 });
                                 var dv = $("#diva-wrapper", context).data("diva");
                             }
                         }
                   })(jQuery);';
     drupal_add_js($init_diva, array('type' => 'inline', 'preprocess' => TRUE));
+
 }
 
 function diva_attach_pages($nid, $divaid) {

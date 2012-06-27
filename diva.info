@@ -2,3 +2,5 @@ name = Diva Module
 description = "A Drupal Module to manage Diva.js images"
 core = 7.x
 package = Diva
+dependencies[] = libraries
+dependencies[] = jquery_update
